@@ -1,0 +1,7 @@
+problem.plotfilename = "wd"
+problem.outfile = "pltconv"
+problem.dim = 3
+problem.proj_outfile="proj.out"
+problem.N_rad=500
+problem.do_project1d=1
+problem.writeplot=0
