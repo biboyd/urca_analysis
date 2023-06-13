@@ -1,5 +1,6 @@
 import argparse
 import yt
+import unyt as u
 import pandas as pd
 import numpy as np
 
@@ -17,6 +18,7 @@ parser.add_argument('-o', '--outdir', type=str, help='out directory of plot. Def
 parser.add_argument('-pg', '--plotgrid', help='plot gridlines', default=False, action='store_true')
 parser.add_argument('-a', '--axis', type=str, help='x, y, or z axis to take slice of. defaults to x', default="z")
 parser.add_argument('-cH', '--contour_Hnuc0', help='plot Hnuc=0 contours', default=False, action='store_true')
+parser.add_argument('-cR', '--contour_rho', help='plot density contours', default=None, type=float)
 parser.add_argument('-cU21', '--contour_Urca21', help='plot A21_frac=0 contours', default=False, action='store_true')
 parser.add_argument('-cU23', '--contour_Urca23', help='plot A23_frac=0 contours', default=False, action='store_true')
 parser.add_argument('-cU25', '--contour_Urca25', help='plot A25_frac=0 contours', default=False, action='store_true')
@@ -127,6 +129,10 @@ default_outdir = {"magvel": "plots_magvel/",
                  }
 
 # derived field functions
+
+def _UrcaActivity(field, data):
+    #A=23 nuc
+    return data['boxlib', 'omegadot(ne23)']
 
 def _c12_complement(field, data):
     return (0.39975 - data["boxlib", "X(c12)"])
@@ -239,6 +245,13 @@ def plot_slice(ds, slice_field, args):
             take_log=False,
             dimensions='dimensionless',
             display_name="$\\frac{\\mathrm{X({}^{25}Na)} - \\mathrm{X({}^{25}Mg)}}{\\mathrm{{}^{25}X(Na)} + \\mathrm{{}^{25}X(Mg)}}$",
+            sampling_type="local")
+        
+    if slice_field == "UrcaActivity":
+        ds.add_field(
+            name=("boxlib", "UrcaActivity"),
+            function=_UrcaActivity,
+            take_log=False,
             sampling_type="local")
         
     #add fields to dataset if needed
@@ -361,6 +374,10 @@ def plot_slice(ds, slice_field, args):
         s.annotate_contour(('boxlib', 'Hnuc'), levels=1, factor=1, take_log=False,
                        clim=(0.0,0.0), plot_args={'colors' : args.contourcolor})
     
+    if args.contour_rho is not None:
+        s.annotate_contour(('boxlib', 'rho'), levels=1, factor=1, take_log=False,
+                       clim=(args.contour_rho,args.contour_rho), plot_args={'colors' : args.contourcolor})
+        
     if args.contour_Urca21:
         s.annotate_contour(('boxlib', 'A21_frac'), levels=1, factor=1, take_log=False,
                        clim=(0.0,0.0), plot_args={'colors' : args.contourcolor, 'linestyles' : '--'})
@@ -479,7 +496,10 @@ def get_mixing_region(ds):
     return (prof['radius'].iloc[idx_min], 'cm'), (prof['radius'].iloc[idx_max], 'cm')
         
 if __name__=="__main__":
-    ds = yt.load(args.infile, hint='maestro')
+    try:
+        ds = yt.load(args.infile, hint='maestro')
+    except yt.utilities.exceptions.YTUnidentifiedDataType:
+        ds = yt.load(args.infile)
     
     s, outdir = plot_slice(ds, args.field, args)
     s.save(outdir)
