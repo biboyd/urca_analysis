@@ -1,0 +1,4 @@
+problem.plotfilename="plotfiles/plt0062297"
+problem.dim=3
+problem.outfile="plt0062297_nu"
+problem.do_neutrinos=1

@@ -95,7 +95,8 @@ default_cmap = {"magvel" : "cividis",
                 "A25_frac" : 'BrBG',
                 "ad_excess" : "RdBu",
                 "ad_excess_led" : "RdBu",
-                "tpert" : "seismic"
+                "tpert" : "seismic",
+                "tot_nu_loss" : "inferno"
                 }
 
 default_outdir = {"magvel": "plots_magvel/",
@@ -126,6 +127,7 @@ default_outdir = {"magvel": "plots_magvel/",
                   "ad_excess" : "plots_ad_excess/",
                   "ad_excess_led" : "plots_ad_excess_led/",
                   "tpert" : "plots_tpert/",
+                  "tot_nu_loss" : "plots_nu_loss/"
                  }
 
 # derived field functions
@@ -213,6 +215,15 @@ def _ad_excess(field, data):
 def _ad_excess_led(field, data):
     return  data[('boxlib', 'conv_actual')] - data[('boxlib', 'conv_ledoux')]
 
+# nu loss rate stuff
+def _invert_ecap_losses(field, data):
+    return -1.0 * data[ 'A23_electron_capture_nu_loss'] * u.erg/u.g/u.s
+
+def _invert_beta_losses(field, data):
+    return -1.0 * data[ 'A23_beta_decay_nu_loss'] * u.erg/u.g/u.s
+
+def _tot_nu_loss(field, data):
+    return  (data['thermal_nu_loss'] -1.0 * data[ 'A23_electron_capture_nu_loss']  -1.0 * data[ 'A23_beta_decay_nu_loss'] )* u.erg/u.g/u.s
 
 def plot_slice(ds, slice_field, args):
 
@@ -336,7 +347,34 @@ def plot_slice(ds, slice_field, args):
             display_name="Ledoux $\\Delta \\nabla$",
             sampling_type="local")
         
+    elif slice_field == "nu_ecap_losses":
+        ds.add_field(
+            name=("boxlib", "nu_ecap_losses"),
+            function=_invert_ecap_losses,
+            take_log=True,
+            units='erg/g/s',
+            display_name="$\\nu_{ecap}$ energy losses",
+            sampling_type="local", force_override=True)
 
+    elif slice_field == "nu_beta_losses":
+        ds.add_field(
+            name=("boxlib", "nu_beta_losses"),
+            function=_invert_beta_losses,
+            take_log=True,
+            units='erg/g/s',
+            display_name="$\\nu_{beta}$ energy losses",
+            sampling_type="local", force_override=True)
+
+    elif slice_field == "tot_nu_loss":
+        ds.add_field(
+            name=("boxlib", "tot_nu_loss"),
+            function=_tot_nu_loss,
+            take_log=True,
+            units='erg/g/s',
+            display_name="Energy Loss to Neutrino Emissions",
+            sampling_type="local", force_override=True)
+
+        
     if args.axis in ('x', 'y', 'z'):
         if args.conv_zone:
             zone = np.load("conv_zone_over_time.npy")
