@@ -23,7 +23,7 @@ oldjob=$1
 numjobs=$2
 script=$3
 
-if [ $numjobs -gt "20" ]; then
+if [ $numjobs -gt "25" ]; then
     echo "too many jobs requested"
     exit -1
 fi

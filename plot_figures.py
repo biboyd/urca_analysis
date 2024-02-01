@@ -19,6 +19,7 @@ parser.add_argument('-pg', '--plotgrid', help='plot gridlines', default=False, a
 parser.add_argument('-a', '--axis', type=str, help='x, y, or z axis to take slice of. defaults to x', default="z")
 parser.add_argument('-cH', '--contour_Hnuc0', help='plot Hnuc=0 contours', default=False, action='store_true')
 parser.add_argument('-cR', '--contour_rho', help='plot density contours', default=None, type=float)
+parser.add_argument('-sph', '--sphere', help='plot sphere at radius (in km)', default=None, type=float)
 parser.add_argument('-cU21', '--contour_Urca21', help='plot A21_frac=0 contours', default=False, action='store_true')
 parser.add_argument('-cU23', '--contour_Urca23', help='plot A23_frac=0 contours', default=False, action='store_true')
 parser.add_argument('-cU25', '--contour_Urca25', help='plot A25_frac=0 contours', default=False, action='store_true')
@@ -27,6 +28,9 @@ parser.add_argument('-s', '--streamlines', help='plot streamlines', default=Fals
 parser.add_argument('-lc', '--linecolor', type=str, help='color for streamlines', default='black')
 parser.add_argument('-cc', '--contourcolor', type=str, help='contour color', default='black')
 parser.add_argument('-z', '--conv_zone', help='plot just convection zone', default=False, action='store_true')
+parser.add_argument('-fs', '--fontsize', type=int, help='fontsize for plot', default=None)
+parser.add_argument('-at', '--annotate_text', type=str, help='text to annotate', default=None)
+parser.add_argument('-ap', '--annotate_position', type=float,nargs=2, help='postion to place annotated text', default=(0.,0.))
 
 
 args = parser.parse_args()
@@ -66,8 +70,6 @@ default_zlim = {"magvel" : [1e-1, 1e2],
                 "MachNumber" : ['min', 'max'],
                 "tfromp" : ['min', 'max'],
                 "c12_complement" : [0, 'max'],
-                "X(ne23)" : [1e-10, 1e-5],
-                "X(na23)" :  [1e-10, 1e-3],
                 "Ye_asymmetry" : ['min', 'max'],
                 "mu" : ['min', 'max'],
                 "A21_frac" : [-1., 1.],
@@ -80,7 +82,7 @@ default_zlim = {"magvel" : [1e-1, 1e2],
                 }
 
 default_cmap = {"magvel" : "cividis",
-                "radial_velocity" : "RdBu",
+                "radial_velocity" : "RdBu_r",
                 "Hnuc" : 'PiYG',
                 "MachNumber" : 'cividis',
                 "tfromp" : 'magma',
@@ -88,14 +90,15 @@ default_cmap = {"magvel" : "cividis",
                 "X(ne23)" : None,
                 "X(na23)" : None,
                 "Ye_asymmetry" : 'viridis',
+                "rho_Ye" : "plasma",
                 "mu" : 'magma',
                 "eta" : 'plasma',
-                "A21_frac" : 'BrBG',
-                "A23_frac" : 'BrBG',
-                "A25_frac" : 'BrBG',
+                "A21_frac" : 'PuOr',
+                "A23_frac" : 'PuOr',
+                "A25_frac" : 'PuOr',
                 "ad_excess" : "RdBu",
                 "ad_excess_led" : "RdBu",
-                "tpert" : "seismic",
+                "tpert" : "magma",
                 "tot_nu_loss" : "inferno"
                 }
 
@@ -113,11 +116,20 @@ default_outdir = {"magvel": "plots_magvel/",
                   "X(na23)" : "plots_na23_frac/",
                   "X(mg25)" : "plots_mg25_frac/",
                   "X(na25)" : "plots_na25_frac/",
+                  "omegadot(c12)"  : "plots_omegadot_c12/",
+                  "omegadot(o16)"  : "plots_omegadot_o16/",
+                  "omegadot(ne21)" : "plots_omegadot_ne21/",
+                  "omegadot(f21)"  : "plots_omegadot_f21/",
+                  "omegadot(ne23)" : "plots_omegadot_ne23/",
+                  "omegadot(na23)" : "plots_omegadot_na23/",
+                  "omegadot(mg25)" : "plots_omegadot_mg25/",
+                  "omegadot(na25)" : "plots_omegadot_na25/",
                   "rhopert" : "plots_rhopert/",
                   "Pi" : "plots_Pi/",
                   "rho" : "plots_density/",
                   "Ye" : "plots_Ye/",
                   "Ye_asymmetry" : "plots_Ye_asymmetry/",
+                  "rho_Ye" : "plots_rho_Ye/",
                   "mu" : "plots_mu/",
                   "eta" : "plots_eta/",
                   "A21_frac" : "plots_A21_frac/",
@@ -144,6 +156,11 @@ def _A21_frac(field, data):
     #A=21 nuc
     return (data['boxlib', 'X(f21)'] - data['boxlib', 'X(ne21)'])/ (data['boxlib', 'X(f21)'] + data['boxlib', 'X(ne21)'])
     
+def _A23_ratio(field, data):
+
+    #A=23 nuc
+    return data['boxlib', 'X(ne23)']/data['boxlib', 'X(na23)']
+
 def _A23_frac(field, data):
 
     #A=23 nuc
@@ -153,6 +170,11 @@ def _A25_frac(field, data):
 
     #A=25 nuc
     return (data['boxlib', 'X(na25)'] - data['boxlib', 'X(mg25)'])/ (data['boxlib', 'X(na25)'] + data['boxlib', 'X(mg25)'])
+
+def _A23_tot(field, data):
+
+    #A=23 nuc
+    return(data['boxlib', 'X(ne23)'] + data['boxlib', 'X(na23)'])
 
 # electron fraction if just A=23
 def _Ye23(field, data):
@@ -189,6 +211,9 @@ def _Ye21_23_25(field, data):
 def _Ye_asymmetry(field, data):
     return data['boxlib', 'Ye'] - 0.5
 
+def _rho_Ye(field, data):
+    return data['boxlib', 'rho'] * data['boxlib', 'Ye']
+
 # neutronization
 def _eta(field, data):
     return 1- 2*data['boxlib', 'Ye']
@@ -208,6 +233,9 @@ def _mu21_23_25(field, data):
     
     return 1./(muinv)
 
+def _mass(field, data):
+    return data[('boxlib', 'rho')] * data[('gas', 'volume')] * u.g/u.cm**3
+
 # convection related fields
 def _ad_excess(field, data):
     return  data[('boxlib', 'conv_actual')] - data[('boxlib', 'conv_adiabatic')]
@@ -225,10 +253,13 @@ def _invert_beta_losses(field, data):
 def _tot_nu_loss(field, data):
     return  (data['thermal_nu_loss'] -1.0 * data[ 'A23_electron_capture_nu_loss']  -1.0 * data[ 'A23_beta_decay_nu_loss'] )* u.erg/u.g/u.s
 
+def _rel_tpert(field, data):
+    return data[('boxlib', 'tpert')]/data[('boxlib', 'tfromp')]
+
 def plot_slice(ds, slice_field, args):
 
     width, uselog, linthresh, zlo, zup, cmap, outdir = load_defaults(slice_field, args)
-    field = ('boxlib', slice_field)
+    field = slice_field
 
     #treat a21/23/25 differently b/c of possible contours
     if slice_field == "A21_frac" or args.contour_Urca21:
@@ -249,6 +280,7 @@ def plot_slice(ds, slice_field, args):
             display_name="$\\frac{\\mathrm{X({}^{23}Ne)} - \\mathrm{X({}^{23}Na)}}{\\mathrm{{}^{23}X(Ne)} + \\mathrm{{}^{23}X(Na)}}$",
             sampling_type="local")
         
+        
     if slice_field == "A25_frac" or args.contour_Urca25:
         ds.add_field(
             name=("boxlib", "A25_frac"),
@@ -258,6 +290,24 @@ def plot_slice(ds, slice_field, args):
             display_name="$\\frac{\\mathrm{X({}^{25}Na)} - \\mathrm{X({}^{25}Mg)}}{\\mathrm{{}^{25}X(Na)} + \\mathrm{{}^{25}X(Mg)}}$",
             sampling_type="local")
         
+    if slice_field == "A23_tot":
+        ds.add_field(
+            name=("boxlib", "A23_tot"),
+            function=_A23_tot,
+            take_log=False,
+            dimensions='dimensionless',
+            display_name="$\\mathrm{X({}^{23}Ne)} + \\mathrm{X({}^{23}Na)}$",
+            sampling_type="local")
+        
+    if slice_field == "A23_ratio":
+        ds.add_field(
+            name=("boxlib", "A23_ratio"),
+            function=_A23_ratio,
+            take_log=False,
+            dimensions='dimensionless',
+            display_name="$\\mathrm{X({}^{23}Ne)} / \\mathrm{X({}^{23}Na)}$",
+            sampling_type="local")
+
     if slice_field == "UrcaActivity":
         ds.add_field(
             name=("boxlib", "UrcaActivity"),
@@ -276,7 +326,7 @@ def plot_slice(ds, slice_field, args):
             sampling_type="local")
 
     # check if include A=21 urca pair in there. include those in calc.
-    elif slice_field == "Ye" or slice_field == "Ye_asymmetry" or slice_field == "eta":
+    elif slice_field == "Ye" or slice_field == "Ye_asymmetry" or slice_field == "eta" or slice_field == "rho_Ye":
         if ("boxlib", "X(ne21)") in ds.field_list:
             ds.add_field(
                 name=("boxlib", "Ye"),
@@ -297,6 +347,14 @@ def plot_slice(ds, slice_field, args):
             function=_Ye_asymmetry,
             take_log=False,
             display_name="Ye - 0.5",
+            units = "dimensionless",
+            sampling_type="local")
+        
+        ds.add_field(
+            name=("boxlib", "rho_Ye"),
+            function=_rho_Ye,
+            take_log=True,
+            display_name="$\\rho Y_e$",
             units = "dimensionless",
             sampling_type="local")
         
@@ -374,6 +432,13 @@ def plot_slice(ds, slice_field, args):
             display_name="Energy Loss to Neutrino Emissions",
             sampling_type="local", force_override=True)
 
+    elif slice_field == "rel_tpert":
+        ds.add_field(
+            name=("boxlib", "rel_tpert"),
+            function=_rel_tpert,
+            take_log=False,
+            display_name="$\\frac{T - \\bar{T}}{T}$",
+            sampling_type="local", force_override=True)
         
     if args.axis in ('x', 'y', 'z'):
         if args.conv_zone:
@@ -415,6 +480,9 @@ def plot_slice(ds, slice_field, args):
     if args.contour_rho is not None:
         s.annotate_contour(('boxlib', 'rho'), levels=1, factor=1, take_log=False,
                        clim=(args.contour_rho,args.contour_rho), plot_args={'colors' : args.contourcolor})
+    
+    if args.sphere is not None:
+        s.annotate_sphere(ds.domain_center, (args.sphere, 'km'))
         
     if args.contour_Urca21:
         s.annotate_contour(('boxlib', 'A21_frac'), levels=1, factor=1, take_log=False,
@@ -447,6 +515,13 @@ def plot_slice(ds, slice_field, args):
             vel_fld2 = ('boxlib', 'vely')
             
         s.annotate_streamlines(vel_fld1, vel_fld2,density=0.8, color=args.linecolor)
+        
+    # annotate text
+    if args.annotate_text is not None:
+        s.annotate_text(args.annotate_position, args.annotate_text, coord_system='plot')
+    # edit the fontsize
+    if args.fontsize is not None:
+        s.set_font_size(args.fontsize)
         
     # add simulation time and save
     s.annotate_timestamp(draw_inset_box=True)
