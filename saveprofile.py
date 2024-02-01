@@ -74,6 +74,7 @@ def save_profile(fname):
                 display_name="$m$ ",
                 units='g',
                 sampling_type="local")
+    """
     if ("boxlib", "X(ne21)") in ds.field_list:
         ds.add_field(
             name=("boxlib", "Ye"),
@@ -94,9 +95,18 @@ def save_profile(fname):
             function=_mu23,
             take_log=False,
             sampling_type="local")
-
+    """
+    def _radvel(field, data):
+        return (data[('boxlib', 'velx')] * (data[('index', 'x')] - ds.domain_center[0]) + 
+                data[('boxlib', 'vely')] *  (data[('index', 'y')] - ds.domain_center[1]) + 
+                data[('boxlib', 'velz')]  *  (data[('index', 'z')] - ds.domain_center[2]))/data[('index', 'radius')]
+    if ('boxlib', 'radial_velocity') not in ds.field_list:
+        ds.add_field(name=('boxlib', 'radial_velocity'),
+                    function=_radvel,
+                    take_log=True,
+                    sampling_type='local')
     #generate profiles
-    prof_fields=[('boxlib', 'X(ne23)'), ('boxlib', 'X(na23)'), ('boxlib', 'X(c12)'), ('boxlib', 'X(o16)'), ('boxlib', 'tfromp'), ('boxlib', 'vort'), ('boxlib', 'radial_velocity'), ('boxlib', 'MachNumber'), ('boxlib', 'rho'), ('boxlib', 'p0pluspi'), ('boxlib', 'Hnuc'), ('boxlib', 'Ye'), ('boxlib', 'mu'), ('boxlib', 'entropy')]
+    prof_fields=[('boxlib', 'X(ne23)'), ('boxlib', 'X(na23)'), ('boxlib', 'X(c12)'), ('boxlib', 'X(o16)'), ('boxlib', 'tfromp'), ('boxlib', 'vort'), ('boxlib', 'radial_velocity'), ('boxlib', 'rho'), ('boxlib', 'p0pluspi'), ('boxlib', 'Hnuc'), ('boxlib', 'entropy')]
     
     prof = yt.create_profile(ds.all_data(), 'radius', prof_fields, n_bins=500, extrema={'radius':(0, 8e7)}, logs={'radius':False})
 

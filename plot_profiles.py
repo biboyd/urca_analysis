@@ -61,7 +61,7 @@ ax.plot(rho, Xne23, label = '${}^{23}\mathrm{Ne}$')
     
 equal = rho[np.argmin(abs(Xna23 - Xne23))]
 #ax.set_yscale('log')
-bot, top = ax.set_ylim(0, 6e-4)
+bot, top = ax.set_ylim(0, 1e-3)
 
 ax.set_ylabel("Mass Fraction")
 ax.set_xlabel("Density ($g/cm^3$)")
