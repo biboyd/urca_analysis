@@ -28,12 +28,14 @@ parser.add_argument('-dg', '--drawgrids', action='store_true', help='If supplied
 parser.add_argument('-da', '--drawaxes', action='store_true', help='If supplied, draw an axes triad.')
 parser.add_argument('-alpha_ones', '--alpha_ones', action='store_true', help='If supplied, set the transfer function values to ones.')
 parser.add_argument('-res', '--resolution', type=int, default=2048, help='Resolution for output plot.')
+parser.add_argument('-u', '--urca_rho', type=float, default=None, help='Plot density source (intended to be at urca shell 1.9e9 for myfix2048).')
 parser.add_argument('-o', '--outprefix', type=str, default="", help='prefix to put at front of file')
+parser.add_argument('-ptf', '--plot_tfunction', action='store_true',  help='plot the transferfunction files')
 parser.add_argument('-dry', '--dry_run', action='store_true', help='Plot only the transfer functions and quit.')
 args = parser.parse_args()
 
 yt.enable_parallelism()
-comm = yt.utilities.parallel_tools.parallel_analysis_interface.Communicator()
+
 # Hack: because rendering likes log fields ...
 ## create positive_radial_velocity and negative_radial_velocity fields.
 ## must do this before opening dataset
@@ -41,8 +43,6 @@ def _pos_radial_velocity(field, data):
     return np.maximum(data[('boxlib','radial_velocity')], yt.YTQuantity(1.0e-99, 'km/s'))
 def _neg_radial_velocity(field, data):
     return np.maximum(-data[('boxlib','radial_velocity')], yt.YTQuantity(1.0e-99, 'km/s'))
-def _linear_hnuc(field, data):
-    return data[('boxlib', 'Hnuc')]/1.e9 + 1.0
 
 # Open Dataset
 ds = yt.load(args.infile, hint='maestro')
@@ -61,34 +61,14 @@ ds.add_field(name=("boxlib", "neg_radial_velocity"),
             units = "km/s",
             sampling_type="local")
 
-ds.add_field(name=("boxlib", "linear_hnuc"),
-            function=_linear_hnuc,
-            take_log=False,
-            display_name="Urca Shell",
-            units = "dimensionless",
-            sampling_type="local")
-
 core = ds.sphere(ds.domain_center, (args.rup, 'cm'))
-urca_shell = ds.sphere(ds.domain_center, (450, 'km'))- ds.sphere(ds.domain_center, (350, 'km'))
 # Create Scene
 sc = Scene()
 
 # Create Sources
-#so_enuc = VolumeSource(core, ('boxlib','enucdot'))
 so_pos_vrad = create_volume_source(core, 'pos_radial_velocity')
 so_neg_vrad = create_volume_source(core, 'neg_radial_velocity')
-so_urca = create_volume_source(urca_shell, 'Hnuc')
-
-# Assign Transfer Functions to Sources
-# tfh_en = TransferFunctionHelper(ds)
-# tfh_en.set_field(('boxlib','enucdot'))
-# tfh_en.set_log(True)
-# tfh_en.set_bounds()
-# tfh_en.build_transfer_function()
-# tfh_en.tf.add_layers(10, colormap='black_green', w=0.01)
-# tfh_en.grey_opacity = False
-# tfh_en.plot('{}_tfun_enuc.png'.format(args.infile), profile_field=('boxlib','enucdot'))
-# so_enuc.transfer_function = tfh_en.tf
+so_urca = create_volume_source(core, 'rho')
 
 mag_vel_bounds = np.array([np.min([args.velocity_minimum, args.velocity_center])/2., np.max([args.velocity_maximum, args.velocity_center])*2.])
 mag_vel_sigma  = args.velocity_sigma
@@ -101,6 +81,7 @@ if args.alpha_ones:
 else:
     alphavec = np.logspace(-3, 0, num=nlayers, endpoint=True)
 
+# positive velocity
 tfh = TransferFunctionHelper(ds)
 tfh.set_field('pos_radial_velocity')
 tfh.set_log(True)
@@ -110,13 +91,12 @@ tfh.build_transfer_function()
 tfh.tf.add_gaussian(np.log10(args.velocity_center), mag_vel_sigma**2, Reds(1.))
 tfh.tf.add_gaussian(np.log10(args.velocity_center/2.), mag_vel_sigma**2, Reds(0.5, alpha=0.1))
 tfh.tf.add_gaussian(np.log10(args.velocity_center/4.), mag_vel_sigma**2, Reds(0.25, alpha=0.01))
-#tfh.tf.add_gaussian(-0.2, 0.1**2, [1.0, 0.0, 0.0, 0.12])
-tfh.plot(f"{args.outprefix}{ds.basename}_tfun_pos_vrad.png", profile_field=('boxlib', 'pos_radial_velocity'))
-#tf = ColorTransferFunction([log_min, log_max])
-#tf.clear()
-#tf.add_gaussian(np.log10(args.velocity_center), mag_vel_sigma**2, Reds(1.))
+
+if args.plot_tfunction:
+    tfh.plot(f"{args.outprefix}{ds.basename}_tfun_pos_vrad.png")#, profile_field=('boxlib', 'pos_radial_velocity'))
 so_pos_vrad.transfer_function = tfh.tf
 
+# negative velocity
 tfh = TransferFunctionHelper(ds)
 tfh.set_field('neg_radial_velocity')
 tfh.set_log(True)
@@ -126,22 +106,22 @@ tfh.build_transfer_function()
 tfh.tf.add_gaussian(np.log10(args.velocity_center), mag_vel_sigma**2, Blues(1.))
 tfh.tf.add_gaussian(np.log10(args.velocity_center/2.), mag_vel_sigma**2, Blues(.5, alpha=0.1))
 tfh.tf.add_gaussian(np.log10(args.velocity_center/4.), mag_vel_sigma**2, Blues(.25, alpha=0.01))
-#tfh.tf.add_gaussian(-0.2, 0.1**2, [0.0, 0.0, 1.0, 0.12])
-tfh.plot(f"{args.outprefix}{ds.basename}_tfun_neg_vrad.png", profile_field=('neg_radial_velocity'))
-#tf = ColorTransferFunction([log_min, log_max])
-#tf.clear()
-#tf.add_gaussian(np.log10(args.velocity_center), mag_vel_sigma**2, Reds(1.))
+
+if args.plot_tfunction:
+    tfh.plot(f"{args.outprefix}{ds.basename}_tfun_neg_vrad.png")#, profile_field=('neg_radial_velocity'))
 so_neg_vrad.transfer_function = tfh.tf
 
-tfh = TransferFunctionHelper(ds)
-tfh.set_field(('boxlib', 'linear_hnuc'))
-tfh.set_log(False)
-tfh.grey_opacity = False
-tfh.set_bounds((-4, 6))
-tfh.build_transfer_function()
-tfh.tf.add_gaussian(1.0, 1., [1., 1., 1., 1])
-#tfh.plot(f"{args.outprefix}{ds.basename}_tfun_urca_shell.png", profile_field=('linear_hnuc')) 
-so_urca.transfer_function = tfh.tf
+if args.urca_rho is not None:
+    tfh = TransferFunctionHelper(ds)
+    tfh.set_field(('boxlib', 'rho'))
+    tfh.set_log(True)
+    tfh.grey_opacity = False
+    tfh.set_bounds((1.e9, 4.5e9))
+    tfh.build_transfer_function()
+    tfh.tf.add_gaussian(np.log10(args.urca_rho), (mag_vel_sigma/10.)**2, [1., 1., 1., 0.1]) # should give a white shell
+    if args.plot_tfunction:
+        tfh.plot(f"{args.outprefix}{ds.basename}_tfun_urca_shell.png") 
+    so_urca.transfer_function = tfh.tf
 
 if args.dry_run:
     exit()
@@ -149,7 +129,8 @@ if args.dry_run:
 # Add sources to scene
 sc.add_source(so_pos_vrad)
 sc.add_source(so_neg_vrad)
-#sc.add_source(so_urca)
+if args.urca_rho is not None:
+    sc.add_source(so_urca)
 
 # Add camera to scene
 sc.add_camera(ds, lens_type="perspective")
@@ -169,9 +150,10 @@ if args.drawgrids:
     sc.annotate_grids(ds, alpha=0.01)
 
 # Annotate by drawing axes triad
-if args.drawaxes:
+if True: #args.drawaxes:
     sc.annotate_axes(alpha=0.01) 
 
 sc.camera.yaw(args.angle, rot_center=ds.domain_center)
-sc.save_annotated(f"{args.outprefix}{ds.basename}_rendering_rad-vel.png", sigma_clip=4, render=True, label_fmt="%.2d")
-#sc.save(f"{args.outprefix}{ds.basename}_rendering_rad-vel.png", sigma_clip=4, render=True)
+sc.render()
+sc.save(f"{args.outprefix}{ds.basename}_rendering_rad-vel.png", sigma_clip=4, render=False)
+sc.save_annotated(f"{args.outprefix}{ds.basename}_annotated_rendering_rad-vel.png", sigma_clip=4,  render=False, label_fmt="%.2d")
