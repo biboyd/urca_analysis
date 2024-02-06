@@ -453,7 +453,7 @@ def plot_slice(ds, slice_field, args):
         raise ValueError(f"axis argument given ({args.a}) invalid. must be 'x', 'y', or 'z' ")
     
     # set velocity to default as km/s
-    if field == ('boxlib', 'radial_velocity') or field == ('boxlib', 'magvel'):
+    if field == ('boxlib', 'radial_velocity') or field == ('boxlib', 'magvel') or field == 'radial_velocity':
         s.set_unit(field, "km/s")
     
     s.set_zlim(field, zlo, zup)
