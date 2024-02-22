@@ -1,7 +1,7 @@
 import argparse
 import yt
 import unyt as u
-import pandas as pd
+#import pandas as pd
 import numpy as np
 
 # pass arguments
@@ -17,6 +17,7 @@ parser.add_argument('-c', '--cmap', type=str, help='colormap of plot. Default de
 parser.add_argument('-o', '--outdir', type=str, help='out directory of plot. Default depends on field', default=None)
 parser.add_argument('-pg', '--plotgrid', help='plot gridlines', default=False, action='store_true')
 parser.add_argument('-a', '--axis', type=str, help='x, y, or z axis to take slice of. defaults to x', default="z")
+parser.add_argument('-flip', '--flip_axis', default=False, action='store_true', help='flip vertical axis of slice')
 parser.add_argument('-cH', '--contour_Hnuc0', help='plot Hnuc=0 contours', default=False, action='store_true')
 parser.add_argument('-cR', '--contour_rho', help='plot density contours', default=None, type=float)
 parser.add_argument('-sph', '--sphere', help='plot sphere at radius (in km)', default=None, type=float)
@@ -452,8 +453,11 @@ def plot_slice(ds, slice_field, args):
     else:
         raise ValueError(f"axis argument given ({args.a}) invalid. must be 'x', 'y', or 'z' ")
     
+    if args.flip_axis:
+        s.flip_vertical()
+
     # set velocity to default as km/s
-    if field == ('boxlib', 'radial_velocity') or field == ('boxlib', 'magvel') or field == 'radial_velocity':
+    if field == ('boxlib', 'radial_velocity') or field == ('boxlib', 'magvel') or field == 'radial_velocity' or field == 'velocity_magnitude':
         s.set_unit(field, "km/s")
     
     s.set_zlim(field, zlo, zup)
@@ -532,6 +536,10 @@ def load_defaults(slice_field, args):
     # everything default to None unless specified or included in default dictionaries
     width = (args.width, 'km')
     
+    # alias the velocit magnitude field for same defaults
+    if slice_field == 'velocity_magnitude':
+        slice_field = 'magvel'
+
     # set log defaults
     if args.uselog is None and slice_field in default_uselog.keys():
         uselog = default_uselog[slice_field]
