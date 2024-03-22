@@ -12,8 +12,13 @@ time_arr = []
 ratio_arr = []
 timestep_arr = []
 
+if len(argv) == 1:
+    plot_dir = "plotfiles"
+else:
+    plot_dir = argv[1]
+
 try:
-    old_ratio_file = "ratio_over_time.npy"
+    old_ratio_file = "ratio300_over_time.npy"
     old_ratio_arr = np.load(old_ratio_file)
     calc_all = False
     
@@ -21,43 +26,34 @@ except FileNotFoundError:
     calc_all = True
     print("Could not find old files, will be calculating for each file")
 
-for f in listdir("plotfiles"):
-    if f[:3] == "plt" and not f[-3:] == "_nu" and not f[-5:] == "_conv":
-        fname = f.replace(".csv", '').replace('profiles/', '')
+for f in listdir(plot_dir):
+    if f[:3] == "plt" and len(f) == 10:
         try:
-            ds = yt.load(f"plotfiles/{f}", hint='amrex')
+            ds = yt.load(f"{plot_dir}/{f}", hint='amrex')
 
             time = ds.current_time.value
             timestep = float(ds.basename.removeprefix("plt"))
         except FileNotFoundError:
             continue
-            # check if already calculated
 
+    # check if already calculated
     if not calc_all and timestep in old_ratio_arr[:, 2]: 
-        idx = np.argmin(np.abs(time - old_ratio_arr[:, 0]))
+        idx = np.argmin(np.abs(timestep - old_ratio_arr[:, 2]))
         time_arr.append(old_ratio_arr[idx, 0])
         ratio_arr.append(old_ratio_arr[idx, 1])
         timestep_arr.append(old_ratio_arr[idx, 2])
-        continue
 
-    """
-    df = pd.read_csv(f"profiles/{f}",index_col=0).dropna()
-
-    rad = df.radius.to_numpy(np.float64)/1e5 #km
-    i = np.argmin(np.abs(rad - 300))
-    ratio = np.mean(df["X(na23)"].iloc[:i])/np.mean(df["X(ne23)"].iloc[:i])
-    """
-    sph = ds.sphere(ds.domain_center, (300, 'km'))
-    ratio = sph.mean("X(na23)")/sph.mean("X(ne23)")
-    
-
-    time_arr.append(time)
-    ratio_arr.append(ratio)
-    timestep_arr.append(timestep)
+    else:
+        sph = ds.sphere(ds.domain_center, (300, 'km'))
+        ratio = sph.mean("X(na23)")/sph.mean("X(ne23)")
+        
+        time_arr.append(time)
+        ratio_arr.append(ratio)
+        timestep_arr.append(timestep)
 
 output =  np.array([time_arr, ratio_arr, timestep_arr]).swapaxes(0, 1)
 sorted_output = output[ np.argsort(output[:, 0]) ]
-np.save("ratio_over_time.npy", sorted_output)
+np.save("ratio300_over_time.npy", sorted_output)
 fig, ax = plt.subplots(1, 1)
 
 ax.plot(time_arr, ratio_arr, 'o')
@@ -71,4 +67,4 @@ ax.grid()
 fig.tight_layout()
 
 
-fig.savefig(f"ratio_over_time.png")
+fig.savefig(f"ratio300_over_time.png")
