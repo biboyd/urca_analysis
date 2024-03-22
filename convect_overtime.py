@@ -69,10 +69,18 @@ for j, file in enumerate(all_files):
                     try:
                         df = pd.read_csv(f"profiles/{file}.csv", index_col=0).dropna()
                     except FileNotFoundError:
+                        print(f"no profile found for {file}")
                         continue
-                    i = np.argmin(np.abs(df['X(c12)'].to_numpy() - (0.39974)))
                     
-                    r = ds.quan(df['radius'].iloc[i], 'cm').in_units('km')
+                    ## construct c12 grad using center diff.
+                    c12_arr = df['X(c12)'].to_numpy()
+                    rad_arr = df['radius'].to_numpy()
+                    
+                    c12_grad_arr = (c12_arr[1:] - c12_arr[:-1])/(rad_arr[1:] - rad_arr[:-1])
+                    
+                    i = np.argmax(c12_grad_arr) + 1 # add offset since excluding 0th index
+                    
+                    r = ds.quan(rad_arr[i], 'cm').in_units('km')
         
                 else:
                     r = ds.quan(rad, 'km')
