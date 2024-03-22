@@ -19,7 +19,7 @@ parser.add_argument('-cpos', '--camera_position', type=float, nargs=3, help='3-D
 parser.add_argument('-cnorth', '--camera_north', type=float, nargs=3, help='Camera north vector (direction of up).')
 parser.add_argument('-vmin', '--velocity_minimum', type=float, default=1.0e-2, help='Minimum velocity for transfer function. (Default is 1.0e-2 km/s).')
 parser.add_argument('-vmax', '--velocity_maximum', type=float, default=1.0e2, help='Maximum velocity for transfer function. (Default is 1.0e2 km/s).')
-parser.add_argument('-v', '--velocity_center', type=float, default=2., help='center velocity for transfer function in log10. (Default is 2 (1e2 km/s)).')
+parser.add_argument('-v', '--velocity_center', type=float, default=20., help='center velocity for transfer function in log10. (Default is 20 km/s ).')
 parser.add_argument('-vsig', '--velocity_sigma', type=float, default=0.05, help='Velocity transfer function width parameter. (Default is 0.05).')
 parser.add_argument('-a', '--angle', type=float, default=0., help='angle in which to rotate about the north vector.')
 parser.add_argument('-n', '--num_layers', type=int, default=5, help='Number of layers for each of +/- velocity. (Default is 5).')
@@ -34,15 +34,15 @@ parser.add_argument('-ptf', '--plot_tfunction', action='store_true',  help='plot
 parser.add_argument('-dry', '--dry_run', action='store_true', help='Plot only the transfer functions and quit.')
 args = parser.parse_args()
 
-yt.enable_parallelism()
+#yt.enable_parallelism()
 
 # Hack: because rendering likes log fields ...
 ## create positive_radial_velocity and negative_radial_velocity fields.
 ## must do this before opening dataset
 def _pos_radial_velocity(field, data):
-    return np.maximum(data[('boxlib','radial_velocity')], yt.YTQuantity(1.0e-99, 'km/s'))
+    return np.maximum(data[('gas','radial_velocity')], yt.YTQuantity(1.0e-99, 'km/s'))
 def _neg_radial_velocity(field, data):
-    return np.maximum(-data[('boxlib','radial_velocity')], yt.YTQuantity(1.0e-99, 'km/s'))
+    return np.maximum(-data[('gas','radial_velocity')], yt.YTQuantity(1.0e-99, 'km/s'))
 
 # Open Dataset
 ds = yt.load(args.infile, hint='maestro')
@@ -89,8 +89,8 @@ tfh.grey_opacity = False
 tfh.set_bounds(mag_vel_bounds)
 tfh.build_transfer_function()
 tfh.tf.add_gaussian(np.log10(args.velocity_center), mag_vel_sigma**2, Reds(1.))
-tfh.tf.add_gaussian(np.log10(args.velocity_center/2.), mag_vel_sigma**2, Reds(0.5, alpha=0.1))
-tfh.tf.add_gaussian(np.log10(args.velocity_center/4.), mag_vel_sigma**2, Reds(0.25, alpha=0.01))
+tfh.tf.add_gaussian(np.log10(args.velocity_center/2.), mag_vel_sigma**2, Reds(0.5, alpha=0.5))
+tfh.tf.add_gaussian(np.log10(args.velocity_center/4.), mag_vel_sigma**2, Reds(0.25, alpha=0.25))
 
 if args.plot_tfunction:
     tfh.plot(f"{args.outprefix}{ds.basename}_tfun_pos_vrad.png")#, profile_field=('boxlib', 'pos_radial_velocity'))
@@ -104,8 +104,8 @@ tfh.grey_opacity = False
 tfh.set_bounds(mag_vel_bounds)
 tfh.build_transfer_function()
 tfh.tf.add_gaussian(np.log10(args.velocity_center), mag_vel_sigma**2, Blues(1.))
-tfh.tf.add_gaussian(np.log10(args.velocity_center/2.), mag_vel_sigma**2, Blues(.5, alpha=0.1))
-tfh.tf.add_gaussian(np.log10(args.velocity_center/4.), mag_vel_sigma**2, Blues(.25, alpha=0.01))
+tfh.tf.add_gaussian(np.log10(args.velocity_center/2.), mag_vel_sigma**2, Blues(.5, alpha=0.5))
+tfh.tf.add_gaussian(np.log10(args.velocity_center/4.), mag_vel_sigma**2, Blues(.25, alpha=0.25))
 
 if args.plot_tfunction:
     tfh.plot(f"{args.outprefix}{ds.basename}_tfun_neg_vrad.png")#, profile_field=('neg_radial_velocity'))
