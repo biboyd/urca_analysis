@@ -3,4 +3,4 @@ from sys import argv
 
 nf = int(argv[1])
 for i in range(nf):
-    print(2*np.pi/nf * i)
+    print(f"{i:03}", 2*np.pi/nf * i)
