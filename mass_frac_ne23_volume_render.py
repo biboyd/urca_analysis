@@ -8,7 +8,7 @@ import numpy as np
 import argparse
 
 from matplotlib import colormaps
-Purples = colormaps['magma']
+plasma = colormaps['plasma']
 Reds = colormaps['Reds']
 
 parser = argparse.ArgumentParser()
@@ -56,14 +56,14 @@ tfh = TransferFunctionHelper(ds)
 tfh.set_field(field)
 tfh.set_log(True)
 tfh.grey_opacity = args.grey
-tfh.set_bounds((7.e-4, 1.e-3))
+tfh.set_bounds((5.e-4, 1.e-3))
 tfh.build_transfer_function()
 
-#tfh.tf.add_gaussian(np.log10(9.5e-4), args.frac_sigma**2, Purples(1., args.alpha))
-tfh.tf.add_gaussian(np.log10(9.0e-4), args.frac_sigma**2, Purples(1., args.alpha))
-tfh.tf.add_gaussian(np.log10(8.5e-4), args.frac_sigma**2, Purples(0.75, args.alpha))
-tfh.tf.add_gaussian(np.log10(8.0e-4), args.frac_sigma**2, Purples(0.5, args.alpha))
-tfh.tf.add_gaussian(np.log10(7.5e-4), args.frac_sigma**2, Purples(0.25, args.alpha))
+#tfh.tf.add_gaussian(np.log10(9.5e-4), args.frac_sigma**2, plasma(1., args.alpha))
+tfh.tf.add_gaussian(np.log10(8.e-4), args.frac_sigma**2, plasma(1., args.alpha))
+tfh.tf.add_gaussian(np.log10(7.5e-4), args.frac_sigma**2, plasma(0.66, args.alpha))
+tfh.tf.add_gaussian(np.log10(7.e-4), args.frac_sigma**2, plasma(0.33, args.alpha))
+tfh.tf.add_gaussian(np.log10(6.5e-4), args.frac_sigma**2, plasma(0., args.alpha))
 
 tfh.plot(f"{args.outprefix}{ds.basename}_tfun_ne23_frac.png")#, profile_field=('boxlib', 'urca_ratio'))
              
@@ -76,7 +76,7 @@ if args.urca_rho is not None:
     tfh.grey_opacity = False
     tfh.set_bounds((1.e9, 4.5e9))
     tfh.build_transfer_function()
-    tfh.tf.add_gaussian(np.log10(args.urca_rho), 0.01**2, [1., 1., 1., 0.1]) # should give a white shell
+    tfh.tf.add_gaussian(np.log10(args.urca_rho), 0.01**2, [1., 1., 1., 0.8]) # should give a white shell
     if args.plot_tfunction:
         tfh.plot(f"{args.outprefix}{ds.basename}_tfun_urca_shell.png") 
     so_urca_shell.transfer_function = tfh.tf

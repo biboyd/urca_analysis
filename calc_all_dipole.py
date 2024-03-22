@@ -7,14 +7,12 @@ import pandas as pd
 yt.set_log_level(40)
 
 
-def _radvel(field, data):
-    return (data[('boxlib', 'velx')] * (data[('index', 'x')] - cx) + data[('boxlib', 'vely')] *  (data[('index', 'y')] - cy) + data[('boxlib', 'velz')]  *  (data[('index', 'z')] - cz))/data[('index', 'radius')]
 def _radvel_alongx(field, data):
-    return data[('boxlib', 'radial_velocity')]*(data[('index', 'x')] - cx)/data[('index', 'radius')]
+    return data[('gas', 'radial_velocity')]*(data[('index', 'x')] - cx)/data[('index', 'radius')]
 def _radvel_alongy(field, data):
-    return data[('boxlib', 'radial_velocity')]*(data[('index', 'y')] - cy)/data[('index', 'radius')]
+    return data[('gas', 'radial_velocity')]*(data[('index', 'y')] - cy)/data[('index', 'radius')]
 def _radvel_alongz(field, data):
-    return data[('boxlib', 'radial_velocity')]*(data[('index', 'z')] - cz)/data[('index', 'radius')]
+    return data[('gas', 'radial_velocity')]*(data[('index', 'z')] - cz)/data[('index', 'radius')]
 
 all_files = listdir("plotfiles")
 output = np.zeros((len(all_files), 8), dtype=np.float64) -1.
@@ -38,14 +36,6 @@ for j, f in enumerate(all_files):
         cx = ds.domain_center[0]
         cy = ds.domain_center[1]
         cz = ds.domain_center[2]
-        
-        if ('boxlib', 'radial_velocity') not in ds.field_list:
-            ds.add_field(name=('boxlib', 'radial_velocity'),
-                         function=_radvel,
-                         units='cm/s',
-                         take_log=True,
-                         sampling_type='local')
-
         
         ds.add_field(name=("gas", "radvel_alongx"),
                     function=_radvel_alongx,
@@ -100,7 +90,7 @@ for j, f in enumerate(all_files):
         weighted=True
         # density weighted means
         if weighted:
-            radvel_base = conv_sph.mean(('boxlib', 'radial_velocity'), weight=('boxlib', 'rho'))
+            radvel_base = conv_sph.mean(('gas', 'radial_velocity'), weight=('boxlib', 'rho'))
             radvel_x = conv_sph.mean(('gas', 'radvel_alongx'), weight=('boxlib', 'rho'))
             radvel_y = conv_sph.mean(('gas', 'radvel_alongy'), weight=('boxlib', 'rho'))
             radvel_z = conv_sph.mean(('gas', 'radvel_alongz'), weight=('boxlib', 'rho'))
@@ -110,7 +100,7 @@ for j, f in enumerate(all_files):
             
         else:
             # Unweighted
-            radvel_base = conv_sph.mean(('boxlib', 'radial_velocity'))
+            radvel_base = conv_sph.mean(('gas', 'radial_velocity'))
             radvel_x = conv_sph.mean(('gas', 'radvel_alongx'))
             radvel_y = conv_sph.mean(('gas', 'radvel_alongy'))
             radvel_z = conv_sph.mean(('gas', 'radvel_alongz'))

@@ -10,11 +10,11 @@ cy = ds.domain_center[1]
 cz = ds.domain_center[2]
 
 def _radvel_alongx(field, data):
-    return data[('boxlib', 'radial_velocity')]*(data[('index', 'x')] - cx)/data[('index', 'radius')]
+    return data[('gas', 'radial_velocity')]*(data[('index', 'x')] - cx)/data[('index', 'radius')]
 def _radvel_alongy(field, data):
-    return data[('boxlib', 'radial_velocity')]*(data[('index', 'y')] - cy)/data[('index', 'radius')]
+    return data[('gas', 'radial_velocity')]*(data[('index', 'y')] - cy)/data[('index', 'radius')]
 def _radvel_alongz(field, data):
-    return data[('boxlib', 'radial_velocity')]*(data[('index', 'z')] - cz)/data[('index', 'radius')]
+    return data[('gas', 'radial_velocity')]*(data[('index', 'z')] - cz)/data[('index', 'radius')]
 
 ds.add_field(name=("gas", "radvel_alongx"),
             function=_radvel_alongx,
@@ -41,7 +41,7 @@ else:
     conv_sph = ds.sphere(ds.domain_center, (600, 'km'))
 
 # density weighted means
-density_radvel_base = conv_sph.mean(('boxlib', 'radial_velocity'), weight=('boxlib', 'rho'))
+density_radvel_base = conv_sph.mean(('gas', 'radial_velocity'), weight=('boxlib', 'rho'))
 density_radvel_x = conv_sph.mean(('gas', 'radvel_alongx'), weight=('boxlib', 'rho'))
 density_radvel_y = conv_sph.mean(('gas', 'radvel_alongy'), weight=('boxlib', 'rho'))
 density_radvel_z = conv_sph.mean(('gas', 'radvel_alongz'), weight=('boxlib', 'rho'))
@@ -71,7 +71,7 @@ if density_radvel_z < 0:
     density_theta+= np.pi
 
 # Unweighted
-radvel_base = conv_sph.mean(('boxlib', 'radial_velocity'))
+radvel_base = conv_sph.mean(('gas', 'radial_velocity'))
 radvel_x = conv_sph.mean(('gas', 'radvel_alongx'))
 radvel_y = conv_sph.mean(('gas', 'radvel_alongy'))
 radvel_z = conv_sph.mean(('gas', 'radvel_alongz'))
