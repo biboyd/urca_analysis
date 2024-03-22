@@ -27,6 +27,7 @@ parser.add_argument('-dd', '--drawdomain', action='store_true', help='If supplie
 parser.add_argument('-dg', '--drawgrids', action='store_true', help='If supplied, draw the grids.')
 parser.add_argument('-da', '--drawaxes', action='store_true', help='If supplied, draw an axes triad.')
 parser.add_argument('-alpha_ones', '--alpha_ones', default=True, action='store_true', help='If supplied, set the transfer function values to ones.')
+parser.add_argument('-opaque', '--opaque', default=False, action='store_true', help='If supplied, set the transfer function to use grey opaqueness')
 parser.add_argument('-res', '--resolution', type=int, default=2048, help='Resolution for output plot.')
 parser.add_argument('-u', '--urca_rho', type=float, default=None, help='Plot density source (intended to be at urca shell 1.9e9 for myfix2048).')
 parser.add_argument('-o', '--outprefix', type=str, default="", help='prefix to put at front of file')
@@ -62,7 +63,7 @@ else:
 tfh = TransferFunctionHelper(ds)
 tfh.set_field(field)
 tfh.set_log(True)
-tfh.grey_opacity = False
+tfh.grey_opacity = args.opaque
 tfh.set_bounds(bounds)
 tfh.build_transfer_function()
 tfh.tf.add_layers(args.num_layers,
