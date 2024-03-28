@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 import yt
 import unyt
-from yt.units import dimensions
 from yt.visualization.volume_rendering.transfer_function_helper import TransferFunctionHelper
-from yt.visualization.volume_rendering.api import Scene, create_volume_source, Camera, ColorTransferFunction
+from yt.visualization.volume_rendering.api import Scene, create_volume_source
 import numpy as np
 import argparse
 
 from matplotlib import colormaps
+
 Blues = colormaps['Blues']
 Reds = colormaps['Reds']
 
@@ -17,8 +17,6 @@ parser.add_argument('-rup', '--rup', type=float, default=1.0e8, help='Maximum ra
 parser.add_argument('-zoom', '--zoom', type=float, default=1.0, help='Camera zoom factor. Default 1.0.')
 parser.add_argument('-cpos', '--camera_position', type=float, nargs=3, help='3-D Camera position in fractions of maximum radius (--rup).')
 parser.add_argument('-cnorth', '--camera_north', type=float, nargs=3, help='Camera north vector (direction of up).')
-parser.add_argument('-vmin', '--velocity_minimum', type=float, default=1.0e-2, help='Minimum velocity for transfer function. (Default is 1.0e-2 km/s).')
-parser.add_argument('-vmax', '--velocity_maximum', type=float, default=1.0e2, help='Maximum velocity for transfer function. (Default is 1.0e2 km/s).')
 parser.add_argument('-v', '--velocity_center', type=float, default=20., help='center velocity for transfer function in log10. (Default is 20 km/s ).')
 parser.add_argument('-vsig', '--velocity_sigma', type=float, default=0.05, help='Velocity transfer function width parameter. (Default is 0.05).')
 parser.add_argument('-a', '--angle', type=float, default=0., help='angle in which to rotate about the north vector.')
@@ -39,8 +37,9 @@ args = parser.parse_args()
 ds = yt.load(args.infile, hint='maestro')
 
 # Hack: because rendering likes log fields ...
-## create positive_radial_velocity and negative_radial_velocity fields.
-## must do this before opening dataset
+# create positive_radial_velocity and negative_radial_velocity fields.
+
+
 def _pos_radial_velocity(field, data):
     radius = np.sqrt((data[('gas', 'x')] - ds.domain_center[0])**2 +
                      (data[('gas', 'y')] - ds.domain_center[1])**2 +
@@ -66,18 +65,18 @@ def _neg_radial_velocity(field, data):
 
 
 ds.add_field(name=("boxlib", "pos_radial_velocity"),
-            function=_pos_radial_velocity,
-            take_log=True,
-            display_name="Outflow Velocity",
-            units = "km/s",
-            sampling_type="local")
+             function=_pos_radial_velocity,
+             take_log=True,
+             display_name="Outflow Velocity",
+             units="km/s",
+             sampling_type="local")
     
 ds.add_field(name=("boxlib", "neg_radial_velocity"),
-            function=_neg_radial_velocity,
-            take_log=True,
-            display_name="Inflow Velocity",
-            units = "km/s",
-            sampling_type="local")
+             function=_neg_radial_velocity,
+             take_log=True,
+             display_name="Inflow Velocity",
+             units="km/s",
+             sampling_type="local")
 
 core = ds.sphere(ds.domain_center, (args.rup, 'cm'))
 # Create Scene
@@ -113,12 +112,16 @@ tfh.set_log(True)
 tfh.grey_opacity = False
 tfh.set_bounds(mag_vel_bounds)
 tfh.build_transfer_function()
-tfh.tf.add_gaussian(np.log10(args.velocity_center), mag_vel_sigma**2, Reds(1.))
-tfh.tf.add_gaussian(np.log10(args.velocity_center/2.), mag_vel_sigma**2, Reds(0.5, alpha=0.5))
-tfh.tf.add_gaussian(np.log10(args.velocity_center/4.), mag_vel_sigma**2, Reds(0.25, alpha=0.25))
+
+tfh.tf.add_gaussian(np.log10(args.velocity_center), mag_vel_sigma**2,
+                    Reds(1.0))
+tfh.tf.add_gaussian(np.log10(args.velocity_center/2.), mag_vel_sigma**2,
+                    Reds(0.5, alpha=0.5))
+tfh.tf.add_gaussian(np.log10(args.velocity_center/4.), mag_vel_sigma**2,
+                    Reds(0.25, alpha=0.25))
 
 if args.plot_tfunction:
-    tfh.plot(f"{args.outprefix}{ds.basename}_tfun_pos_vrad.png")#, profile_field=('boxlib', 'pos_radial_velocity'))
+    tfh.plot(f"{args.outprefix}{ds.basename}_tfun_pos_vrad.png")
 so_pos_vrad.transfer_function = tfh.tf
 
 # negative velocity
@@ -128,12 +131,16 @@ tfh.set_log(True)
 tfh.grey_opacity = False
 tfh.set_bounds(mag_vel_bounds)
 tfh.build_transfer_function()
-tfh.tf.add_gaussian(np.log10(args.velocity_center), mag_vel_sigma**2, Blues(1.))
-tfh.tf.add_gaussian(np.log10(args.velocity_center/2.), mag_vel_sigma**2, Blues(.5, alpha=0.5))
-tfh.tf.add_gaussian(np.log10(args.velocity_center/4.), mag_vel_sigma**2, Blues(.25, alpha=0.25))
+
+tfh.tf.add_gaussian(np.log10(args.velocity_center), mag_vel_sigma**2,
+                    Blues(1.0))
+tfh.tf.add_gaussian(np.log10(args.velocity_center/2.), mag_vel_sigma**2,
+                    Blues(0.5, alpha=0.5))
+tfh.tf.add_gaussian(np.log10(args.velocity_center/4.), mag_vel_sigma**2,
+                    Blues(0.25, alpha=0.25))
 
 if args.plot_tfunction:
-    tfh.plot(f"{args.outprefix}{ds.basename}_tfun_neg_vrad.png")#, profile_field=('neg_radial_velocity'))
+    tfh.plot(f"{args.outprefix}{ds.basename}_tfun_neg_vrad.png")
 so_neg_vrad.transfer_function = tfh.tf
 
 if args.urca_rho is not None:
@@ -143,9 +150,12 @@ if args.urca_rho is not None:
     tfh.grey_opacity = False
     tfh.set_bounds((1.e9, 4.5e9))
     tfh.build_transfer_function()
-    tfh.tf.add_gaussian(np.log10(args.urca_rho), (mag_vel_sigma/10.)**2, [1., 1., 1., 0.1]) # should give a white shell
+
+    # should give a white shell
+    tfh.tf.add_gaussian(np.log10(args.urca_rho), (mag_vel_sigma/10.)**2,
+                        [1., 1., 1., 0.1])
     if args.plot_tfunction:
-        tfh.plot(f"{args.outprefix}{ds.basename}_tfun_urca_shell.png") 
+        tfh.plot(f"{args.outprefix}{ds.basename}_tfun_urca_shell.png")
     so_urca.transfer_function = tfh.tf
 
 if args.dry_run:
@@ -161,11 +171,13 @@ if args.urca_rho is not None:
 sc.add_camera(ds, lens_type="perspective")
 
 # Set camera properties
+camera_radius = unyt.unyt_array(args.camera_position, 'cm') * args.rup
 sc.camera.focus = ds.domain_center
 sc.camera.resolution = args.resolution
 sc.camera.north_vector = unyt.unyt_array(args.camera_north, 'cm')
-sc.camera.position = ds.domain_center + unyt.unyt_array(args.camera_position, 'cm') * args.rup
+sc.camera.position = ds.domain_center + camera_radius
 sc.camera.set_width((3*args.rup, 'cm'))
+
 # Annotate domain - draw boundaries
 if args.drawdomain:
     sc.annotate_domain(ds, color=[1, 1, 1, 0.01])
@@ -175,10 +187,13 @@ if args.drawgrids:
     sc.annotate_grids(ds, alpha=0.01)
 
 # Annotate by drawing axes triad
-if True: #args.drawaxes:
-    sc.annotate_axes(alpha=0.01) 
+if args.drawaxes:
+    sc.annotate_axes(alpha=0.01)
 
 sc.camera.yaw(args.angle, rot_center=ds.domain_center)
 sc.render()
-sc.save(f"{args.outprefix}{ds.basename}_rendering_rad-vel.png", sigma_clip=4, render=False)
-sc.save_annotated(f"{args.outprefix}{ds.basename}_annotated_rendering_rad-vel.png", sigma_clip=4,  render=False, label_fmt="%.2d")
+file_prefix = f"{args.outprefix}{ds.basename}"
+sc.save(f"{file_prefix}_rendering_rad-vel.png",
+        sigma_clip=4, render=False)
+sc.save_annotated(f"{file_prefix}_annotated_rendering_rad-vel.png",
+                  sigma_clip=4,  render=False, label_fmt="%.2d")
