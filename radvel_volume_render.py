@@ -67,14 +67,14 @@ def _neg_radial_velocity(field, data):
 ds.add_field(name=("boxlib", "pos_radial_velocity"),
              function=_pos_radial_velocity,
              take_log=True,
-             display_name="Outflow Velocity",
+             display_name="Outflow \\; Velocity",
              units="km/s",
              sampling_type="local")
     
 ds.add_field(name=("boxlib", "neg_radial_velocity"),
              function=_neg_radial_velocity,
              take_log=True,
-             display_name="Inflow Velocity",
+             display_name="Inflow \\; Velocity",
              units="km/s",
              sampling_type="local")
 
@@ -162,8 +162,8 @@ if args.dry_run:
     exit()
 
 # Add sources to scene
-sc.add_source(so_pos_vrad)
 sc.add_source(so_neg_vrad)
+sc.add_source(so_pos_vrad)
 if args.urca_rho is not None:
     sc.add_source(so_urca)
 
@@ -196,4 +196,4 @@ file_prefix = f"{args.outprefix}{ds.basename}"
 sc.save(f"{file_prefix}_rendering_rad-vel.png",
         sigma_clip=4, render=False)
 sc.save_annotated(f"{file_prefix}_annotated_rendering_rad-vel.png",
-                  sigma_clip=4,  render=False, label_fmt="%.2d")
+                  sigma_clip=4,  render=False, label_fontsize=24, label_fmt="%.2d")
