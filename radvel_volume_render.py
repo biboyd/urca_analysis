@@ -34,18 +34,36 @@ parser.add_argument('-ptf', '--plot_tfunction', action='store_true',  help='plot
 parser.add_argument('-dry', '--dry_run', action='store_true', help='Plot only the transfer functions and quit.')
 args = parser.parse_args()
 
-#yt.enable_parallelism()
+
+# Open Dataset
+ds = yt.load(args.infile, hint='maestro')
 
 # Hack: because rendering likes log fields ...
 ## create positive_radial_velocity and negative_radial_velocity fields.
 ## must do this before opening dataset
 def _pos_radial_velocity(field, data):
-    return np.maximum(data[('gas','radial_velocity')], yt.YTQuantity(1.0e-99, 'km/s'))
-def _neg_radial_velocity(field, data):
-    return np.maximum(-data[('gas','radial_velocity')], yt.YTQuantity(1.0e-99, 'km/s'))
+    radius = np.sqrt((data[('gas', 'x')] - ds.domain_center[0])**2 +
+                     (data[('gas', 'y')] - ds.domain_center[1])**2 +
+                     (data[('gas', 'z')] - ds.domain_center[2])**2)
 
-# Open Dataset
-ds = yt.load(args.infile, hint='maestro')
+    radvel = (data[('boxlib', 'velx')] * (data[('gas', 'x')] - ds.domain_center[0]) +
+              data[('boxlib', 'vely')] * (data[('gas', 'y')] - ds.domain_center[1]) +
+              data[('boxlib', 'velz')] * (data[('gas', 'z')] - ds.domain_center[2]))/radius
+
+    return np.maximum(radvel.in_units('km/s'), yt.YTQuantity(1.0e-99, 'km/s'))
+
+
+def _neg_radial_velocity(field, data):
+    radius = np.sqrt((data[('gas', 'x')] - ds.domain_center[0])**2 +
+                     (data[('gas', 'y')] - ds.domain_center[1])**2 +
+                     (data[('gas', 'z')] - ds.domain_center[2])**2)
+
+    radvel = -(data[('boxlib', 'velx')] * (data[('gas', 'x')] - ds.domain_center[0]) +
+               data[('boxlib', 'vely')] * (data[('gas', 'y')] - ds.domain_center[1]) +
+               data[('boxlib', 'velz')] * (data[('gas', 'z')] - ds.domain_center[2]))/radius
+
+    return np.maximum(radvel.in_units('km/s'), yt.YTQuantity(1.0e-99, 'km/s'))
+
 
 ds.add_field(name=("boxlib", "pos_radial_velocity"),
             function=_pos_radial_velocity,
@@ -70,10 +88,17 @@ so_pos_vrad = create_volume_source(core, 'pos_radial_velocity')
 so_neg_vrad = create_volume_source(core, 'neg_radial_velocity')
 so_urca = create_volume_source(core, 'rho')
 
-mag_vel_bounds = np.array([np.min([args.velocity_minimum, args.velocity_center])/2., np.max([args.velocity_maximum, args.velocity_center])*2.])
-mag_vel_sigma  = args.velocity_sigma
-log_min = np.log10(args.velocity_minimum)
-log_max = np.log10(args.velocity_maximum)
+s = yt.SlicePlot(ds, args.camera_position, 'pos_radial_velocity',
+                 center=ds.domain_center,
+                 data_source=core,
+                 width=(args.rup, 'cm'),
+                 north_vector=args.camera_north)
+
+s.set_zlim('all', args.velocity_center/4, args.velocity_center)
+s.save(f"{args.outprefix}{ds.basename}_")
+
+mag_vel_bounds = (np.array(args.velocity_center)/8., args.velocity_center*2.)
+mag_vel_sigma = args.velocity_sigma
 
 nlayers = args.num_layers
 if args.alpha_ones:
