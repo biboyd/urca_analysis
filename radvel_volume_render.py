@@ -158,8 +158,7 @@ if args.urca_rho is not None:
         tfh.plot(f"{args.outprefix}{ds.basename}_tfun_urca_shell.png")
     so_urca.transfer_function = tfh.tf
 
-if args.dry_run:
-    exit()
+
 
 # Add sources to scene
 sc.add_source(so_neg_vrad)
@@ -190,10 +189,19 @@ if args.drawgrids:
 if args.drawaxes:
     sc.annotate_axes(alpha=0.01)
 
+# rotate
 sc.camera.yaw(args.angle, rot_center=ds.domain_center)
+
+# stop if dry run
+if args.dry_run:
+    exit()
+
+# do the rendering
 sc.render()
+
+# save
 file_prefix = f"{args.outprefix}{ds.basename}"
 sc.save(f"{file_prefix}_rendering_rad-vel.png",
         sigma_clip=4, render=False)
 sc.save_annotated(f"{file_prefix}_annotated_rendering_rad-vel.png",
-                  sigma_clip=4,  render=False, label_fontsize=24, label_fmt="%.2d")
+                  sigma_clip=4,  render=False, label_fontsize=36, label_fmt="%.2d")
