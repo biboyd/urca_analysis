@@ -19,15 +19,22 @@ output = np.zeros((len(all_files), 8), dtype=np.float64) -1.
 
 #previous data
 try:
-    old_dipole_info = np.load("dipole_info.npy")
+    old_dipole_info = np.load("dipole_info_overtime.npy")
     calc_all = False
     
 except FileNotFoundError:
     calc_all = True
     print("Could not find old files, will be calculating for each file")
+    
+# grab convect zone array
+try:
+    conv_zone_arr = np.load("conv_zone_over_time.npy")
+except FileNotFoundError:
+    print("Could not find the conv zone file. Make sure to run convect_overtim.py first.")
+    raise FileNotFoundError("conv_zone_over_time.npy")
 
 for j, f in enumerate(all_files):
-    if f[:3] == "plt" and not f[-3:] == "_nu":
+    if f[:3] == "plt" and len(f) == 10:
         #import dataset
         ds = yt.load(f"plotfiles/{f}")
         print(ds.basename)
@@ -72,10 +79,10 @@ for j, f in enumerate(all_files):
         else:
             #read from file
             try:
-                df = pd.read_csv(f"profiles/{ds.basename}.csv", index_col=0).dropna()
-                idx = np.argmin(np.abs(df['X(c12)'].to_numpy() - (0.39974)))
-                rad = ds.quan(df['radius'].iloc[idx], 'cm').in_units('km')
-            except FileNotFoundError:
+                assert timestep in conv_zone_arr[:, 2], f"{timestep} not in conv zone array"
+                idx = np.argmin(np.abs(timestep - conv_zone_arr[:, 2]))
+                rad = ds.quan(conv_zone_arr[idx, 1], 'km')
+            except AssertionError:
                 print('no profile found for:', ds.basename)
                 #fall back to a default
                 rad = (600 , 'km')
@@ -121,14 +128,14 @@ for j, f in enumerate(all_files):
         if radvel_z < 0:
             theta+= np.pi
             
-        print()
-        print()
-        print('radvel', radvel_base.in_units('km/s'))
-        print('radvel along x', radvel_x.in_units('km/s'))
-        print('radvel along y', radvel_y.in_units('km/s'))
-        print('radvel along z', radvel_z.in_units('km/s'))
-        print('angle phi', phi)
-        print('angle theta', theta)
+        #print()
+        #print()
+        #print('radvel', radvel_base.in_units('km/s'))
+        #print('radvel along x', radvel_x.in_units('km/s'))
+        #print('radvel along y', radvel_y.in_units('km/s'))
+        #print('radvel along z', radvel_z.in_units('km/s'))
+        #print('angle phi', phi)
+        #print('angle theta', theta)
 
         output[j, :] = [curr_time, radvel_base, radvel_x, radvel_y, radvel_z, phi, theta, timestep]
 
@@ -136,4 +143,4 @@ for j, f in enumerate(all_files):
 #sort array by sim time
 sorted_output = output[ np.argsort(output[:, 0]) ]
 sorted_output = sorted_output[ np.where(sorted_output[:, 0] > 0) ]
-np.save("dipole_info.npy", sorted_output)
+np.save("dipole_info_overtime.npy", sorted_output)
