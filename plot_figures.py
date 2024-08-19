@@ -26,6 +26,7 @@ parser.add_argument('-cU23', '--contour_Urca23', help='plot A23_frac=0 contours'
 parser.add_argument('-cU25', '--contour_Urca25', help='plot A25_frac=0 contours', default=False, action='store_true')
 parser.add_argument('-mR', '--mixingregion', help='plot mixing region bounds', default=False, action='store_true')
 parser.add_argument('-s', '--streamlines', help='plot streamlines', default=False, action='store_true')
+parser.add_argument('-arr', '--arrows', help='plot velocity arrows', default=False, action='store_true')
 parser.add_argument('-lc', '--linecolor', type=str, help='color for streamlines', default='black')
 parser.add_argument('-cc', '--contourcolor', type=str, help='contour color', default='black')
 parser.add_argument('-z', '--conv_zone', help='plot just convection zone', default=False, action='store_true')
@@ -70,7 +71,7 @@ default_zlim = {"magvel" : [1e-1, 1e2],
                 "Hnuc" : [-2e11, 2e11],
                 "MachNumber" : ['min', 'max'],
                 "tfromp" : ['min', 'max'],
-                "c12_complement" : [0, 'max'],
+                "c12_complement" : ['min', 'max'],
                 "Ye_asymmetry" : ['min', 'max'],
                 "mu" : ['min', 'max'],
                 "A21_frac" : [-1., 1.],
@@ -150,7 +151,7 @@ def _UrcaActivity(field, data):
     return data['boxlib', 'omegadot(ne23)']
 
 def _c12_complement(field, data):
-    return (0.39975 - data["boxlib", "X(c12)"])
+    return (1.0 - data["boxlib", "X(c12)"])
 
 def _A21_frac(field, data):
 
@@ -177,6 +178,8 @@ def _A23_tot(field, data):
     #A=23 nuc
     return(data['boxlib', 'X(ne23)'] + data['boxlib', 'X(na23)'])
 
+def _mytan_vel(field, data):
+        return np.sqrt(data[('boxlib', 'magvel')]**2 -  data[('boxlib', 'radial_velocity')]**2)
 # electron fraction if just A=23
 def _Ye23(field, data):
     # sum 1/2
@@ -323,8 +326,10 @@ def plot_slice(ds, slice_field, args):
             function=_c12_complement,
             take_log=False,
             units = "dimensionless",
-            display_name="$0.39975 - \\mathrm{X}({}^{12}\\mathrm{C})$ ",
+            display_name="$1 - \\mathrm{X}({}^{12}\\mathrm{C})$ ",
             sampling_type="local")
+    if slice_field == "mytan_vel":
+        ds.add_field(('boxlib', 'mytan_vel'), _mytan_vel, units='km/s', sampling_type='local', force_override=True)
 
     # check if include A=21 urca pair in there. include those in calc.
     elif slice_field == "Ye" or slice_field == "Ye_asymmetry" or slice_field == "eta" or slice_field == "rho_Ye":
@@ -450,6 +455,7 @@ def plot_slice(ds, slice_field, args):
             dat_source = ds.all_data()
         
         s = yt.SlicePlot(ds, args.axis, field, width = width, data_source=dat_source)
+        s.flip_vertical()
     else:
         raise ValueError(f"axis argument given ({args.a}) invalid. must be 'x', 'y', or 'z' ")
     
@@ -507,7 +513,7 @@ def plot_slice(ds, slice_field, args):
         s.annotate_sphere(ds.domain_center, mix_outer, circle_args={"color": "black", "linestyle" : "-."})
         print(mix_inner)
         
-    if args.streamlines:
+    if args.streamlines or args.arrows:
         if args.axis == 'x':
             vel_fld1 = ('boxlib', 'vely')
             vel_fld2 = ('boxlib', 'velz')
@@ -518,7 +524,10 @@ def plot_slice(ds, slice_field, args):
             vel_fld1 = ('boxlib', 'velx')
             vel_fld2 = ('boxlib', 'vely')
             
-        s.annotate_streamlines(vel_fld1, vel_fld2,density=0.8, color=args.linecolor)
+        if args.streamlines:
+            s.annotate_streamlines(vel_fld1, vel_fld2,density=0.8, color=args.linecolor)
+        elif args.arrows:
+            s.annotate_quiver(vel_fld1, vel_fld2, color=args.linecolor)
         
     # annotate text
     if args.annotate_text is not None:
