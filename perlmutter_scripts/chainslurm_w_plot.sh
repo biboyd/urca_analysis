@@ -38,6 +38,11 @@ then
     aout=`sbatch --parsable ${script}`
     echo "   " jobid: $aout
     echo " "
+    sleep 1
+    echo "and adding a plot script onto job 1"
+    module load cpu
+    sbatch -d afterok:${aout} ~/my_urca_analysis/generate_figures.slurm
+	echo " "
     oldjob=$aout
     firstcount=2
     sleep 3
@@ -50,6 +55,11 @@ do
   echo starting job $count to depend on $oldjob
   aout=`sbatch --parsable -d afterany:${oldjob} ${script}`
   echo "   " jobid: $aout
+  echo " "
+  sleep 1
+  echo "and adding a plot script onto job $count"
+  module load cpu
+  sbatch -d afterok:${aout} ~/my_urca_analysis/generate_figures.slurm
   echo " "
   oldjob=$aout
   sleep 1
