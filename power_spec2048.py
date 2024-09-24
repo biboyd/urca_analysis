@@ -8,13 +8,13 @@ def doit(ds):
     # a FFT operates on uniformly gridded data.  We'll use the yt
     # covering grid for this.
     
-    left_edge =  ds.arr([1.96e8, 1.96e8, 1.96e8], 'cm')
-    right_edge =  ds.arr([3.16e8, 3.16e8, 3.16e8], 'cm')
+    left_edge =  ds.arr([1.92e8]*3, 'cm')
+    right_edge =  ds.arr([3.20e8]*3, 'cm')
 
     max_level = ds.index.max_level
 
     low = left_edge #ds.domain_left_edge
-    dims = np.array([1024, 1024, 1024], dtype=np.int64)
+    dims = np.array([1024]*3, dtype=np.int64)
 
     nx, ny, nz = dims
 
@@ -23,10 +23,14 @@ def doit(ds):
     Kk = np.zeros((nx // 2 + 1, ny // 2 + 1, nz // 2 + 1))
 
     for vel in [("boxlib", "velx"), ("boxlib", "vely"), ("boxlib", "velz")]:
-
-        Kk += 0.5 * fft_comp(
-            ds, ("boxlib", "rho"), vel, nindex_rho, max_level, low, dims
-        )
+        print(vel)
+        try:
+            Kk += np.load(f"kk_{vel[1]}.npy")
+        except FileNotFoundError:
+            Kk += 0.5 * fft_comp(
+                ds, ("boxlib", "rho"), vel, nindex_rho, max_level, low, dims
+            )
+            np.save(f"kk_{vel[1]}.npy", Kk)
 
     # wavenumbers
     L = (right_edge - left_edge).d
