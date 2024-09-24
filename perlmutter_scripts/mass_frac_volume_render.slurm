@@ -15,4 +15,4 @@ export MPICH_MAX_THREAD_SAFETY=multiple
 
 my_inputs=$@
 echo $my_inputs
-srun -n 4 python ~/my_urca_analysis/mass_frac_volume_render.py $my_inputs
+srun -n 4 python ~/my_urca_analysis/volume_rendering/mass_frac_volume_render.py $my_inputs

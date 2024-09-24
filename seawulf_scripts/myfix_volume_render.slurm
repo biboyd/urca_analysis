@@ -12,4 +12,4 @@ source activate my-env
 
 my_inputs=$@
 echo $my_inputs
-srun -n 1 python ~/Repo/urca_analysis/myfix_volume_render.py $my_inputs
+srun -n 1 python ~/Repo/urca_analysis/volume_rendering/myfix_volume_render.py $my_inputs

@@ -13,4 +13,4 @@ export MPICH_MAX_THREAD_SAFETY=multiple
 
 my_inputs=$@
 echo $my_inputs
-srun -n 1 python ~/my_urca_analysis/myfix_60frames_volume_render.py $my_inputs
+srun -n 1 python ~/my_urca_analysis/volume_rendering/myfix_60frames_volume_render.py $my_inputs
