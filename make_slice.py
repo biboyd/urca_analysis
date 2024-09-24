@@ -1,5 +1,5 @@
 """
-Want to make a quick script that will make slice plots and save them so I can look at them goodlike
+Want to make a quick script that will make slice plots and save them 
 """
 
 import numpy as np
