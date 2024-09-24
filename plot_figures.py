@@ -20,7 +20,7 @@ parser.add_argument('-a', '--axis', type=str, help='x, y, or z axis to take slic
 parser.add_argument('-flip', '--flip_axis', default=False, action='store_true', help='flip vertical axis of slice')
 parser.add_argument('-cH', '--contour_Hnuc0', help='plot Hnuc=0 contours', default=False, action='store_true')
 parser.add_argument('-cR', '--contour_rho', help='plot density contours', default=None, type=float)
-parser.add_argument('-sph', '--sphere', help='plot sphere at radius (in km)', default=None, type=float)
+parser.add_argument('-sph', '--sphere', help='plot sphere at radius (in km)', default=None, type=float, nargs="*")
 parser.add_argument('-cU21', '--contour_Urca21', help='plot A21_frac=0 contours', default=False, action='store_true')
 parser.add_argument('-cU23', '--contour_Urca23', help='plot A23_frac=0 contours', default=False, action='store_true')
 parser.add_argument('-cU25', '--contour_Urca25', help='plot A25_frac=0 contours', default=False, action='store_true')
@@ -32,7 +32,7 @@ parser.add_argument('-cc', '--contourcolor', type=str, help='contour color', def
 parser.add_argument('-z', '--conv_zone', help='plot just convection zone', default=False, action='store_true')
 parser.add_argument('-fs', '--fontsize', type=int, help='fontsize for plot', default=None)
 parser.add_argument('-at', '--annotate_text', type=str, help='text to annotate', default=None)
-parser.add_argument('-ap', '--annotate_position', type=float,nargs=2, help='postion to place annotated text', default=(0.,0.))
+parser.add_argument('-ap', '--annotate_position', type=float, nargs=2, help='postion to place annotated text', default=(0.,0.))
 
 
 args = parser.parse_args()
@@ -45,8 +45,8 @@ default_uselog = {"magvel" : None,
                   "MachNumber" : None,
                   "tfromp" : False,
                   "c12_complement" : False,
-                  "X(ne23)" : True,
-                  "X(na23)" : True,
+                  "X(Ne23)" : True,
+                  "X(Na23)" : True,
                   "Ye" : False,
                   "Ye_asymmetry" : False,
                   "mu" : False,
@@ -61,8 +61,8 @@ default_linthresh = {"magvel" : None,
                      "Hnuc" : 1e5,
                      "tfromp" : None,
                      "c12_complement" : None,
-                     "X(ne23)" : None,
-                     "X(na23)" : None,
+                     "X(Ne23)" : None,
+                     "X(Na23)" : None,
                      "Ye" : None
                  }
                                   
@@ -89,8 +89,8 @@ default_cmap = {"magvel" : "cividis",
                 "MachNumber" : 'cividis',
                 "tfromp" : 'magma',
                 "c12_complement" : 'viridis',
-                "X(ne23)" : None,
-                "X(na23)" : None,
+                "X(Ne23)" : None,
+                "X(Na23)" : None,
                 "Ye_asymmetry" : 'viridis',
                 "rho_Ye" : "plasma",
                 "mu" : 'magma',
@@ -110,22 +110,25 @@ default_outdir = {"magvel": "plots_magvel/",
                   "MachNumber" : "plots_machNumber/",
                   "tfromp" : "plots_temp/",
                   "c12_complement" : "plots_c12_complement/",
-                  "X(c12)" : "plots_c12_frac/",
-                  "X(o16)" : "plots_o16_frac/",
-                  "X(ne21)" : "plots_ne21_frac/",
-                  "X(f21)" : "plots_f21_frac/",
-                  "X(ne23)" : "plots_ne23_frac/",
-                  "X(na23)" : "plots_na23_frac/",
-                  "X(mg25)" : "plots_mg25_frac/",
-                  "X(na25)" : "plots_na25_frac/",
-                  "omegadot(c12)"  : "plots_omegadot_c12/",
-                  "omegadot(o16)"  : "plots_omegadot_o16/",
-                  "omegadot(ne21)" : "plots_omegadot_ne21/",
-                  "omegadot(f21)"  : "plots_omegadot_f21/",
-                  "omegadot(ne23)" : "plots_omegadot_ne23/",
-                  "omegadot(na23)" : "plots_omegadot_na23/",
-                  "omegadot(mg25)" : "plots_omegadot_mg25/",
-                  "omegadot(na25)" : "plots_omegadot_na25/",
+                  "X(C12)" : "plots_c12_frac/",
+                  "X(C13)" : "plots_c13_frac/",
+                  "X(N13)" : "plots_n13_frac/",
+                  "X(O16)" : "plots_o16_frac/",
+                  "X(Ne20)" : "plots_ne20_frac/",
+                  "X(Ne21)" : "plots_ne21_frac/",
+                  "X(F21)" : "plots_f21_frac/",
+                  "X(Ne23)" : "plots_ne23_frac/",
+                  "X(Na23)" : "plots_na23_frac/",
+                  "X(Mg25)" : "plots_mg25_frac/",
+                  "X(Na25)" : "plots_na25_frac/",
+                  "omegadot(C12)"  : "plots_omegadot_c12/",
+                  "omegadot(O16)"  : "plots_omegadot_o16/",
+                  "omegadot(Ne21)" : "plots_omegadot_ne21/",
+                  "omegadot(F21)"  : "plots_omegadot_f21/",
+                  "omegadot(Ne23)" : "plots_omegadot_ne23/",
+                  "omegadot(Na23)" : "plots_omegadot_na23/",
+                  "omegadot(Mg25)" : "plots_omegadot_mg25/",
+                  "omegadot(Na25)" : "plots_omegadot_na25/",
                   "rhopert" : "plots_rhopert/",
                   "Pi" : "plots_Pi/",
                   "rho" : "plots_density/",
@@ -137,6 +140,9 @@ default_outdir = {"magvel": "plots_magvel/",
                   "A21_frac" : "plots_A21_frac/",
                   "A23_frac" : "plots_A23_frac/",
                   "A25_frac" : "plots_A25_frac/",
+                  "A21_ratio" : "plots_A21_ratio/",
+                  "A23_ratio" : "plots_A23_ratio/",
+                  "A25_ratio" : "plots_A25_ratio/",
                   "vort" : "plots_vorticity/",
                   "ad_excess" : "plots_ad_excess/",
                   "ad_excess_led" : "plots_ad_excess_led/",
@@ -148,67 +154,72 @@ default_outdir = {"magvel": "plots_magvel/",
 
 def _UrcaActivity(field, data):
     #A=23 nuc
-    return data['boxlib', 'omegadot(ne23)']
+    return data['boxlib', 'omegadot(Ne23)']
 
 def _c12_complement(field, data):
-    return (1.0 - data["boxlib", "X(c12)"])
+    return (1.0 - data["boxlib", "X(C12)"])
 
 def _A21_frac(field, data):
 
     #A=21 nuc
-    return (data['boxlib', 'X(f21)'] - data['boxlib', 'X(ne21)'])/ (data['boxlib', 'X(f21)'] + data['boxlib', 'X(ne21)'])
+    return (data['boxlib', 'X(F21)'] - data['boxlib', 'X(Ne21)'])/ (data['boxlib', 'X(F21)'] + data['boxlib', 'X(Ne21)'])
     
 def _A23_ratio(field, data):
 
     #A=23 nuc
-    return data['boxlib', 'X(ne23)']/data['boxlib', 'X(na23)']
+    return data['boxlib', 'X(Ne23)']/data['boxlib', 'X(Na23)']
 
 def _A23_frac(field, data):
 
     #A=23 nuc
-    return(data['boxlib', 'X(ne23)'] - data['boxlib', 'X(na23)'])/ (data['boxlib', 'X(ne23)'] + data['boxlib', 'X(na23)'])
-    
+    return(data['boxlib', 'X(Ne23)'] - data['boxlib', 'X(Na23)'])/ (data['boxlib', 'X(Ne23)'] + data['boxlib', 'X(Na23)'])
+     
+def _A25_ratio(field, data):
+
+    #A=25 nuc
+    return data['boxlib', 'X(Na25)'] / data['boxlib', 'X(Mg25)']
+   
 def _A25_frac(field, data):
 
     #A=25 nuc
-    return (data['boxlib', 'X(na25)'] - data['boxlib', 'X(mg25)'])/ (data['boxlib', 'X(na25)'] + data['boxlib', 'X(mg25)'])
+    return (data['boxlib', 'X(Na25)'] - data['boxlib', 'X(Mg25)'])/ (data['boxlib', 'X(Na25)'] + data['boxlib', 'X(Mg25)'])
 
 def _A23_tot(field, data):
 
     #A=23 nuc
-    return(data['boxlib', 'X(ne23)'] + data['boxlib', 'X(na23)'])
+    return(data['boxlib', 'X(Ne23)'] + data['boxlib', 'X(Na23)'])
 
 def _mytan_vel(field, data):
         return np.sqrt(data[('boxlib', 'magvel')]**2 -  data[('boxlib', 'radial_velocity')]**2)
 # electron fraction if just A=23
 def _Ye23(field, data):
     # sum 1/2
-    Ye=0.5*(data['boxlib', 'X(c12)']+data['boxlib', 'X(o16)']+data['boxlib', 'X(he4)']+data['boxlib', 'X(ne20)'])
+    Ye=0.5*(data['boxlib', 'X(C12)']+data['boxlib', 'X(O16)']+data['boxlib', 'X(He4)']+data['boxlib', 'X(Ne20)'])
     
     #sum ones
-    Ye+=(data['boxlib', 'X(h1)'])
+    Ye+=(data['boxlib', 'X(H1)'])
     
     #A=23 nuc
-    Ye+= (10.*data['boxlib', 'X(ne23)'] + 11.*data['boxlib', 'X(na23)'] + 12.*data['boxlib', 'X(mg23)'])/23.
+    Ye+= (10.*data['boxlib', 'X(Ne23)'] + 11.*data['boxlib', 'X(Na23)'] + 12.*data['boxlib', 'X(Mg23)'])/23.
     
     return Ye
 
 # electron fraction with A=21,23,25 nuclei
 def _Ye21_23_25(field, data):
     # sum 1/2
-    Ye=0.5*(data['boxlib', 'X(c12)']+data['boxlib', 'X(o16)']+data['boxlib', 'X(he4)']+data['boxlib', 'X(ne20)'])
+    Ye=0.5*(data['boxlib', 'X(C12)']+data['boxlib', 'X(O16)']+data['boxlib', 'X(He4)']+data['boxlib', 'X(Ne20)'])
     
     #sum ones
-    Ye+=(data['boxlib', 'X(h1)'])
+    Ye+=(data['boxlib', 'X(H1)'])
     
     #A=21 nuc
-    Ye+= (9.*data['boxlib', 'X(f21)'] + 10.*data['boxlib', 'X(ne21)'])/21.
+    Ye+= (9.*data['boxlib', 'X(F21)'] + 10.*data['boxlib', 'X(Ne21)'])/21.
         
     #A=23 nuc
-    Ye+= (10.*data['boxlib', 'X(ne23)'] + 11.*data['boxlib', 'X(na23)'] + 12.*data['boxlib', 'X(mg23)'])/23.
+    Ye+= (10.*data['boxlib', 'X(Ne23)'] + 11.*data['boxlib', 'X(Na23)'] + 12.*data['boxlib', 'X(Mg23)'])/23.
         
     #A=25 nuc
-    Ye+= (11.*data['boxlib', 'X(na25)'] + 12.*data['boxlib', 'X(mg25)'])/25.
+    Ye+= (11.*data['boxlib', 'X(Na25)'] + 12.*data['boxlib', 'X(Mg25)'])/25.
     
     return Ye
 
@@ -227,13 +238,13 @@ def _Tbar(field, data):
 
 # mean molecular weight with only A=23 nuclei
 def _mu23(field, data):
-    muinv = 2*data['boxlib', 'X(h1)'] + data['boxlib', 'X(n)'] + 3./2. * data['boxlib', 'X(he4)'] + 7./12. * data['boxlib', 'X(c12)'] +  9./16. * data['boxlib', 'X(o16)'] + 11./20. * data['boxlib', 'X(ne20)'] + 11./23. * data['boxlib', 'X(ne23)'] + 12./23. * data['boxlib', 'X(na23)'] + 13./23. * data['boxlib', 'X(mg23)']
+    muinv = 2*data['boxlib', 'X(H1)'] + data['boxlib', 'X(N)'] + 3./2. * data['boxlib', 'X(He4)'] + 7./12. * data['boxlib', 'X(C12)'] +  9./16. * data['boxlib', 'X(O16)'] + 11./20. * data['boxlib', 'X(Ne20)'] + 11./23. * data['boxlib', 'X(Ne23)'] + 12./23. * data['boxlib', 'X(Na23)'] + 13./23. * data['boxlib', 'X(Mg23)']
     
     return 1./(muinv)
 
 # mean molecular weight with A=21,23,25 nuclei
 def _mu21_23_25(field, data):
-    muinv = 2*data['boxlib', 'X(h1)'] + data['boxlib', 'X(n)'] + 3./2. * data['boxlib', 'X(he4)'] + 7./12. * data['boxlib', 'X(c12)'] +  9./16. * data['boxlib', 'X(o16)'] + 11./20. * data['boxlib', 'X(ne20)'] + 11./21. * data['boxlib', 'X(ne21)'] + 11./23. * data['boxlib', 'X(ne23)'] + 10./21. * data['boxlib', 'X(f21)'] + 12./23. * data['boxlib', 'X(na23)'] + 12./25. * data['boxlib', 'X(na25)'] + 13./23. * data['boxlib', 'X(mg23)'] + 13./25. * data['boxlib', 'X(mg25)']
+    muinv = 2*data['boxlib', 'X(H1)'] + data['boxlib', 'X(N)'] + 3./2. * data['boxlib', 'X(He4)'] + 7./12. * data['boxlib', 'X(C12)'] +  9./16. * data['boxlib', 'X(O16)'] + 11./20. * data['boxlib', 'X(Ne20)'] + 11./21. * data['boxlib', 'X(Ne21)'] + 11./23. * data['boxlib', 'X(Ne23)'] + 10./21. * data['boxlib', 'X(F21)'] + 12./23. * data['boxlib', 'X(Na23)'] + 12./25. * data['boxlib', 'X(Na25)'] + 13./23. * data['boxlib', 'X(Mg23)'] + 13./25. * data['boxlib', 'X(Mg25)']
     
     return 1./(muinv)
 
@@ -310,6 +321,15 @@ def plot_slice(ds, slice_field, args):
             take_log=False,
             dimensions='dimensionless',
             display_name="$\\mathrm{X({}^{23}Ne)} / \\mathrm{X({}^{23}Na)}$",
+            sampling_type="local")
+        
+    if slice_field == "A25_ratio":
+        ds.add_field(
+            name=("boxlib", "A25_ratio"),
+            function=_A25_ratio,
+            take_log=False,
+            dimensions='dimensionless',
+            display_name="$\\mathrm{X({}^{25}Na)} / \\mathrm{X({}^{25}Mg)}$",
             sampling_type="local")
 
     if slice_field == "UrcaActivity":
@@ -492,7 +512,8 @@ def plot_slice(ds, slice_field, args):
                        clim=(args.contour_rho,args.contour_rho), plot_args={'colors' : args.contourcolor})
     
     if args.sphere is not None:
-        s.annotate_sphere(ds.domain_center, (args.sphere, 'km'))
+        for anno_sphere in args.sphere:
+            s.annotate_sphere(ds.domain_center, (anno_sphere, 'km'))
         
     if args.contour_Urca21:
         s.annotate_contour(('boxlib', 'A21_frac'), levels=1, factor=1, take_log=False,
@@ -610,18 +631,18 @@ def get_mixing_region(ds):
     profile_fname = f"profiles/{ds.basename}.csv"
     prof = pd.read_csv(profile_fname, index_col=0)
     
-    na23_range = np.max(prof['X(na23)']) - np.min(prof['X(na23)'])
-    ne23_range = np.max(prof['X(ne23)']) - np.min(prof['X(ne23)'])
+    na23_range = np.max(prof['X(Na23)']) - np.min(prof['X(Na23)'])
+    ne23_range = np.max(prof['X(Ne23)']) - np.min(prof['X(Ne23)'])
     # estimate mixing edge as cutttoff for fraction of min/max
     cutoff_frac=0.9
-    frac_na23 = np.max(prof['X(na23)']) - cutoff_frac * na23_range
-    frac_ne23 = np.max(prof['X(ne23)']) - cutoff_frac * ne23_range
+    frac_na23 = np.max(prof['X(Na23)']) - cutoff_frac * na23_range
+    frac_ne23 = np.max(prof['X(Ne23)']) - cutoff_frac * ne23_range
     
     # return nearest index to edge. ignore innermost region
     prof = prof[ prof['radius'] > 1e7 ]
 
-    idx_min = np.argmin(np.abs(prof['X(na23)'] - frac_na23))
-    idx_max = np.argmin(np.abs(prof['X(ne23)'] - frac_ne23))
+    idx_min = np.argmin(np.abs(prof['X(Na23)'] - frac_na23))
+    idx_max = np.argmin(np.abs(prof['X(Ne23)'] - frac_ne23))
     
     return (prof['radius'].iloc[idx_min], 'cm'), (prof['radius'].iloc[idx_max], 'cm')
         
