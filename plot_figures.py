@@ -352,7 +352,7 @@ def plot_slice(ds, slice_field, args):
             name=("boxlib", "Ye_asymmetry"),
             function=_Ye_asymmetry,
             take_log=False,
-            display_name="Ye - 0.5",
+            display_name="$\\mathrm{Y_e} - 0.5$",
             units = "dimensionless",
             sampling_type="local")
         
@@ -360,7 +360,7 @@ def plot_slice(ds, slice_field, args):
             name=("boxlib", "rho_Ye"),
             function=_rho_Ye,
             take_log=True,
-            display_name="$\\rho Y_e$",
+            display_name="$\\rho \\mathrm{Y_e}$",
             units = "dimensionless",
             sampling_type="local")
         
@@ -385,7 +385,7 @@ def plot_slice(ds, slice_field, args):
                 name=("boxlib", "mu"),
                 function=_mu21_23_25,
                 take_log=False,
-                display_name="$\mu$ ",
+                display_name="$\\mu$ ",
                 units = "dimensionless",
                 sampling_type="local")
         else:
@@ -393,7 +393,7 @@ def plot_slice(ds, slice_field, args):
                 name=("boxlib", "mu"),
                 function=_mu23,
                 take_log=False,
-                display_name="$\mu$ ",
+                display_name="$\\mu$ ",
                 units = "dimensionless",
                 sampling_type="local")
         
@@ -477,7 +477,7 @@ def plot_slice(ds, slice_field, args):
     
     # field specific changes. Mostly lable/units related
     if field == ('boxlib', 'Hnuc'):
-        s.set_colorbar_label(field, "$\dot{\epsilon}_{\mathrm{nuc}} \; (\\frac{\mathrm{erg}}{g \cdot s})$")
+        s.set_colorbar_label(field, "$\\dot{\\epsilon}_{\\mathrm{nuc}} \\; (\\frac{\\mathrm{erg}}{g \\cdot s})$")
         
 
     if args.plotgrid:
