@@ -18,7 +18,7 @@ The most importatn one here is the `convect_overtime.py`. This calculates the ra
 * $R_{\mathrm{conv}}$: Radius of convection zone in km (needs 1D profiles of snapshots see `save_profiles.py`)
 * $M_{\mathrm{conv}}$: Mass in the convection zone in solar mass 
 * $V_{\mathrm{rms}}$:  The rms velocity in the convection zone in km/s
-* $<V>$: The average velocity in the convection zone in km/s. Note: should use $V_{\mathrm{rms}}$ in most cases
+* $\langle |V| \rangle$: The average velocity in the convection zone in km/s. Note: should use $V_{\mathrm{rms}}$ in most cases
 * $\tau_{\mathrm{conv}}$:  A measure of the convective turnover time in seconds. Simply $2 R_{\mathrm{conv}} / V_{\mathrm{rms}}$
 
 This information (especially the $R_{\mathrm{conv}}$) is used in many other analyses.
