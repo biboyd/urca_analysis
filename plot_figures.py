@@ -271,6 +271,9 @@ def _tot_nu_loss(field, data):
 def _rel_tpert(field, data):
     return data[('boxlib', 'tpert')]/data[('boxlib', 'tfromp')]
 
+def _w0_magnitude(field, data):
+    return np.sqrt(data[('boxlib', 'w0x')]**2 + data[('boxlib', 'w0y')]**2 + data[('boxlib', 'w0z')]**2) * u.cm/u.s
+
 def plot_slice(ds, slice_field, args):
 
     width, uselog, linthresh, zlo, zup, cmap, outdir = load_defaults(slice_field, args)
@@ -293,6 +296,15 @@ def plot_slice(ds, slice_field, args):
             take_log=False,
             dimensions='dimensionless',
             display_name="$\\frac{\\mathrm{X({}^{23}Ne)} - \\mathrm{X({}^{23}Na)}}{\\mathrm{{}^{23}X(Ne)} + \\mathrm{{}^{23}X(Na)}}$",
+            sampling_type="local")
+
+    if slice_field == "w0_magnitude":
+        ds.add_field(
+            name=("boxlib", "w0_magnitude"),
+            function=_w0_magnitude,
+            take_log=False,
+            units='km/s',
+            display_name="$ | w_0 | $",
             sampling_type="local")
         
         
