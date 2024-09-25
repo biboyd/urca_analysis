@@ -1,9 +1,23 @@
 # URCA Analysis scripts
-these are pretty basic plotting scripts.
+These are largely a collection of python scripts to analyze Urca simulations made using the MAESTROeX code. 
 
-The `make_slice.py` and `make_slice_w_grid.py` scripts are very basic and should just be used as a reference for how to make simple plots
+The 3 key scripts are:
+
+* `plot_figures.py`
+* `overtime_calculations/convect_overtime.py`
+* `save_plot_profiles/save_all_profiles.py`
 
 The `plot_figures.py` is meant to be more useable with some flexibility built in. The default values are meant to reflect the `myfix_urca1024` and `myfix_urca2048` sims. But this is the most general purpose script for making slices. Run `python plot_figures.py --help` for details on what parameters you can edit. This plot will take in a `plotfile` and a `field` to plot. Then create a `SlicePlot` with the set parameters chosen (ie cmap, width etc.) and save a `.png` file.
+
+The `convect_overtime.py` script is explained in below section in more detail. But key is it calculates convective properties like the size of the zone, mass of the zone, characteristic velocity. And the script will calculate each of these values for a number of plotfiles.
+
+The `save_all_profiles.py` generates 1D profiles of a large amount of the fields in a plotfile. This is done by taking a density weighted average of each field vs radius. These are then saved as `.csv` files and can be quickly loaded as `pandas.dataframe`'s
+
+## Dependencies
+* numpy
+* matplotlib
+* yt
+* pandas
 
 ## 3D Volume Rendering
 These scripts under the `volume_rendering` directory make 3D volume renderings of various fields for the Urca problem. Most notably is the `radvel_volume_render.py` which produces a render of the Radial Velocity, showing a clear description of the velocity structure.
@@ -34,6 +48,8 @@ In `save_plot_profiles` we there are scripts for both calculating 1D profiles (t
 These scripts in `slice_plotting` take a `plotfile` and makes a slice plot of a certain quantity/field. 
 
 The `dipole_*.py` files aligns the plot in the direction of the velocity dipole. So the general flow of these plots should be "up". 
+
+The `make_slice.py` and `make_slice_w_grid.py` scripts are very basic and should just be used as a reference for how to make simple plots
 
 ## Inputs Files to C scripts
 There are a few analysis scripts in C that access the data more directly or use libraries that we need to compile and aren't available via python.
