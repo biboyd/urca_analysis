@@ -36,7 +36,7 @@ def save_profile(fname):
         
     @yt.derived_field(name=("gas", "tangential_velocity"), sampling_type='local')
     def velocity_tangential(field, data):
-        return (data["velocity_magnitude"]**2.0 - data["radial_velocity"]**2.0)**0.5
+        return (data["velocity_magnitude"]**2.0 - data["gas", "radial_velocity"]**2.0)**0.5
     
     #generate profiles
     
