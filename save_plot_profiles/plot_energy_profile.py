@@ -1,7 +1,8 @@
 import yt
+import unyt
 import numpy as np
 import matplotlib.pyplot as plt
-
+from sys import argv
 
 @yt.derived_field(name=("gas", "mass"), sampling_type='local')
 def _mass(field, data):
@@ -10,6 +11,8 @@ def _mass(field, data):
 @yt.derived_field(name=("gas", "energy_rate"), sampling_type='local')
 def _energy_rate(field, data):
     return data[('boxlib', 'Hnuc')] * data[('gas', 'mass')] * unyt.erg/unyt.g/unyt.s
+
+ds = yt.load(argv[1])
 
 # calc and save energy rate profile
 N_bins = 100
