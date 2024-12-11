@@ -58,7 +58,7 @@ for j, f in enumerate(all_files):
                 radius = conv_zone_arr[idx, 1]
                 
                 sph = ds.sphere(ds.domain_center, (radius, 'km'))
-                curr_ratio = sph.mean("X(na23)")/sph.mean("X(ne23)")
+                curr_ratio = sph.mean("X(Na23)")/sph.mean("X(Ne23)")
                 
                 urca_ratio_out[j, :] = [time, curr_ratio, timestep]
 
