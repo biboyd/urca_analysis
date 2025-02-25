@@ -27,7 +27,7 @@ def calc_radius(ds, file):
         return -1
 
     ## construct c12 grad using center diff.
-    c12_arr = df['X(c12)'].to_numpy()
+    c12_arr = df['X(C12)'].to_numpy()
     rad_arr = df['radius'].to_numpy()
 
     c12_grad_arr = (c12_arr[1:] - c12_arr[:-1])/(rad_arr[1:] - rad_arr[:-1])
