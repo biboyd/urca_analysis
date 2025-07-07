@@ -19,7 +19,7 @@ parser.add_argument('-cpos', '--camera_position', type=float, default=[0., 0., 1
 parser.add_argument('-cnorth', '--camera_north', type=float,default=[0., 1., 0.],  nargs=3, help='Camera north vector (direction of up).')
 parser.add_argument('-v', '--velocity_center', type=float, default=2., help='center velocity for transfer function in log10. (Default is 2 (1e2 km/s)).')
 parser.add_argument('-vsig', '--velocity_sigma', type=float, default=0.05, help='Velocity transfer function width parameter. (Default is 0.05).')
-parser.add_argument('-a', '--angle', type=float, default=0., help='angle in which to rotate about the north vector.')
+parser.add_argument('-a', '--angle', type=float, default=0., help='angle, in degrees, in which to rotate about the north vector.')
 parser.add_argument('-n', '--num_layers', type=int, default=5, help='Number of layers for each of +/- velocity. (Default is 5).')
 parser.add_argument('-dd', '--drawdomain', action='store_true', help='If supplied, draw the boundaries of the domain.')
 parser.add_argument('-dg', '--drawgrids', action='store_true', help='If supplied, draw the grids.')
@@ -32,6 +32,7 @@ parser.add_argument('-ptf', '--plot_tfunction', action='store_true',  help='plot
 parser.add_argument('-dry', '--dry_run', action='store_true', help='Plot only the transfer functions and quit.')
 args = parser.parse_args()
 
+yt.enable_parallelism()
 
 # Open Dataset
 ds = yt.load(args.infile, hint='maestro')
@@ -87,7 +88,7 @@ so_pos_vrad = create_volume_source(core, 'pos_radial_velocity')
 so_neg_vrad = create_volume_source(core, 'neg_radial_velocity')
 so_urca = create_volume_source(core, 'rho')
 
-s = yt.SlicePlot(ds, args.camera_position, 'pos_radial_velocity',
+"""s = yt.SlicePlot(ds, args.camera_position, 'pos_radial_velocity',
                  center=ds.domain_center,
                  data_source=core,
                  width=(args.rup, 'cm'),
@@ -95,7 +96,7 @@ s = yt.SlicePlot(ds, args.camera_position, 'pos_radial_velocity',
 
 s.set_zlim('all', args.velocity_center/4, args.velocity_center)
 s.save(f"{args.outprefix}{ds.basename}_")
-
+"""
 mag_vel_bounds = (np.array(args.velocity_center)/8., args.velocity_center*2.)
 mag_vel_sigma = args.velocity_sigma
 
@@ -170,12 +171,11 @@ if args.urca_rho is not None:
 sc.add_camera(ds, lens_type="perspective")
 
 # Set camera properties
-camera_radius = unyt.unyt_array(args.camera_position, 'cm') * args.rup
 sc.camera.focus = ds.domain_center
 sc.camera.resolution = args.resolution
 sc.camera.north_vector = unyt.unyt_array(args.camera_north, 'cm')
-sc.camera.position = ds.domain_center + camera_radius
-sc.camera.set_width((3*args.rup, 'cm'))
+sc.camera.position = ds.domain_center + unyt.unyt_array(args.camera_position, 'cm') * args.rup
+sc.camera.set_width((args.rup/args.zoom, 'cm'))
 
 # Annotate domain - draw boundaries
 if args.drawdomain:
@@ -190,10 +190,11 @@ if args.drawaxes:
     sc.annotate_axes(alpha=0.01)
 
 # rotate
-sc.camera.yaw(args.angle, rot_center=ds.domain_center)
+sc.camera.yaw(np.pi*args.angle/180., rot_center=ds.domain_center)
 
 # stop if dry run
 if args.dry_run:
+    print(args.angle)
     exit()
 
 # do the rendering

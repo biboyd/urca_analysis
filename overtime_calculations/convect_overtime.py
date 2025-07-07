@@ -187,6 +187,7 @@ plt.plot(sorted_conv_time[:, 0], sorted_conv_time[:, 1])
 
 plt.ylabel("Convection Timescale (s)")
 plt.xlabel("simulation time (s)")
+plt.grid()
 
 plt.savefig(f"{outdir}/conv_time_over_time.png")
 np.save(f"{outdir}/conv_time_over_time.npy", sorted_conv_time)
@@ -197,6 +198,7 @@ plt.plot(sorted_magvel[:, 0], sorted_magvel[:, 1])
 
 plt.ylabel("avg magnitude velocity (km/s)")
 plt.xlabel("simulation time (s)")
+plt.grid()
 
 plt.savefig(f"{outdir}/magvel_over_time.png")
 np.save(f"{outdir}/magvel_over_time.npy", sorted_magvel)
@@ -207,6 +209,7 @@ plt.plot(sorted_vrms[:, 0], sorted_vrms[:, 1])
 
 plt.ylabel("Vrms (km/s)")
 plt.xlabel("simulation time (s)")
+plt.grid()
 
 plt.savefig(f"{outdir}/vrms_over_time.png")
 np.save(f"{outdir}/vrms_over_time.npy", sorted_vrms)
@@ -217,6 +220,7 @@ plt.plot(sorted_conv_zone[:, 0], sorted_conv_zone[:, 1])
 
 plt.ylabel("Convection Zone Radius (km)")
 plt.xlabel("simulation time (s)")
+plt.grid()
 
 plt.savefig(f"{outdir}/conv_zone_over_time.png")
 np.save(f"{outdir}/conv_zone_over_time.npy", sorted_conv_zone)
@@ -227,6 +231,7 @@ plt.plot(sorted_conv_mass[:, 0], sorted_conv_mass[:, 1])
 
 plt.ylabel("Mass of Convection Zone $(M_{\\odot})$")
 plt.xlabel("simulation time (s)")
+plt.grid()
 
 plt.savefig(f"{outdir}/conv_mass_over_time.png")
 np.save(f"{outdir}/conv_mass_over_time.npy", sorted_conv_mass)
