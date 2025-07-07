@@ -58,7 +58,7 @@ for j, f in enumerate(all_files):
                 radius = conv_zone_arr[idx, 1]
                 
                 sph = ds.sphere(ds.domain_center, (radius, 'km'))
-                curr_ratio = sph.mean("X(Na23)")/sph.mean("X(Ne23)")
+                curr_ratio = sph.mean("rhoX(Ne23)")/sph.mean("rhoX(Na23)")
                 
                 urca_ratio_out[j, :] = [time, curr_ratio, timestep]
 
@@ -73,7 +73,7 @@ ax.plot(sorted_urca_ratio[:, 0],sorted_urca_ratio[:, 1], 'o')
 #ax.set_ylim(0.07, 0.09)
 #ax.set_xlim(4000)
 ax.set_xlabel('time (s)')
-ax.set_title("average $X({}^{23} Na)$/$X({}^{23} Ne)$ \nin Conv zone")
+ax.set_title("average dens $X({}^{23} Ne)$/$X({}^{l3} Na)$ \nin Conv zone")
 
 ax.grid()
 fig.tight_layout()
