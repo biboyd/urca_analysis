@@ -19,9 +19,9 @@ def velocity_z_squared(field, data):
 def velocity_magnitude(field, data):
     return (data["velx"] ** 2.0 + data["vely"] ** 2.0 + data["velz"] ** 2.0)**0.5
     
-#@yt.derived_field(name=("gas", "mass"), sampling_type='local')
-#def _mass(field, data):
-#    return data["boxlib", "rho"]*unyt.g/unyt.cm**3 *data['boxlib', 'volume']
+@yt.derived_field(name=("gas", "mass"), sampling_type='local')
+def _mass(field, data):
+    return data["boxlib", "rho"]*unyt.g/unyt.cm**3 *data['boxlib', 'volume']
 
     
 def save_profile(fname):
