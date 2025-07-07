@@ -19,7 +19,7 @@ parser.add_argument('-pg', '--plotgrid', help='plot gridlines', default=False, a
 parser.add_argument('-a', '--axis', type=str, help='x, y, or z axis to take slice of. defaults to x', default="z")
 parser.add_argument('-flip', '--flip_axis', default=False, action='store_true', help='flip vertical axis of slice')
 parser.add_argument('-cH', '--contour_Hnuc0', help='plot Hnuc=0 contours', default=False, action='store_true')
-parser.add_argument('-cR', '--contour_rho', help='plot density contours', default=None, type=float)
+parser.add_argument('-cR', '--contour_rho', help='plot density contours', default=None, type=float, nargs="*")
 parser.add_argument('-sph', '--sphere', help='plot sphere at radius (in km)', default=None, type=float, nargs="*")
 parser.add_argument('-cU21', '--contour_Urca21', help='plot A21_frac=0 contours', default=False, action='store_true')
 parser.add_argument('-cU23', '--contour_Urca23', help='plot A23_frac=0 contours', default=False, action='store_true')
@@ -29,6 +29,7 @@ parser.add_argument('-s', '--streamlines', help='plot streamlines', default=Fals
 parser.add_argument('-arr', '--arrows', help='plot velocity arrows', default=False, action='store_true')
 parser.add_argument('-lc', '--linecolor', type=str, help='color for streamlines', default='black')
 parser.add_argument('-cc', '--contourcolor', type=str, help='contour color', default='black')
+parser.add_argument('-sphc', '--sphcolor', type=str, help='sphere color', default='white')
 parser.add_argument('-z', '--conv_zone', help='plot just convection zone', default=False, action='store_true')
 parser.add_argument('-fs', '--fontsize', type=int, help='fontsize for plot', default=None)
 parser.add_argument('-at', '--annotate_text', type=str, help='text to annotate', default=None)
@@ -41,6 +42,7 @@ args = parser.parse_args()
 
 default_uselog = {"magvel" : None,
                   "radial_velocity" : True,
+                  "tangential_velocity" : False,
                   "Hnuc" : None,
                   "MachNumber" : None,
                   "tfromp" : False,
@@ -51,7 +53,6 @@ default_uselog = {"magvel" : None,
                   "Ye_asymmetry" : False,
                   "mu" : False,
                   "vort" : False,
-                  "tpert" : False
 
                  }
 
@@ -80,11 +81,11 @@ default_zlim = {"magvel" : [1e-1, 1e2],
                 "ad_excess" : [-0.5, 0.5],
                 "ad_excess_led" : [-0.5, 0.5],
                 "vort" : [0., 6.],
-                "tpert" : [-5e5, 5e5]
                 }
 
 default_cmap = {"magvel" : "cividis",
                 "radial_velocity" : "RdBu_r",
+                "tangential_velocity" : "cividis",
                 "Hnuc" : 'PiYG',
                 "MachNumber" : 'cividis',
                 "tfromp" : 'magma',
@@ -144,6 +145,7 @@ default_outdir = {"magvel": "plots_magvel/",
                   "A23_ratio" : "plots_A23_ratio/",
                   "A25_ratio" : "plots_A25_ratio/",
                   "vort" : "plots_vorticity/",
+                  "tangential_velocity" : "plots_tanvel/",
                   "ad_excess" : "plots_ad_excess/",
                   "ad_excess_led" : "plots_ad_excess_led/",
                   "tpert" : "plots_tpert/",
@@ -163,7 +165,12 @@ def _A21_frac(field, data):
 
     #A=21 nuc
     return (data['boxlib', 'X(F21)'] - data['boxlib', 'X(Ne21)'])/ (data['boxlib', 'X(F21)'] + data['boxlib', 'X(Ne21)'])
-    
+
+def _A21_ratio(field, data):
+
+    #A=23 nuc
+    return data['boxlib', 'X(F21)']/data['boxlib', 'X(Ne21)']
+   
 def _A23_ratio(field, data):
 
     #A=23 nuc
@@ -189,8 +196,13 @@ def _A23_tot(field, data):
     #A=23 nuc
     return(data['boxlib', 'X(Ne23)'] + data['boxlib', 'X(Na23)'])
 
+def _myrad_vel(field, data):
+        return (((data['gas', 'x'] - 2.56e8*u.cm)*data[('boxlib', 'velx')]) + 
+               ((data['gas', 'y'] - 2.56e8*u.cm)*data[('boxlib', 'vely')]) +    
+               ((data['gas', 'z'] - 2.56e8*u.cm)*data[('boxlib', 'velz')]))/data['index', 'radius']
 def _mytan_vel(field, data):
-        return np.sqrt(data[('boxlib', 'magvel')]**2 -  data[('boxlib', 'radial_velocity')]**2)
+        return np.sqrt(data[('boxlib', 'magvel')]**2 -  data[('gas', 'radvel')]**2)
+    
 # electron fraction if just A=23
 def _Ye23(field, data):
     # sum 1/2
@@ -325,7 +337,16 @@ def plot_slice(ds, slice_field, args):
             dimensions='dimensionless',
             display_name="$\\mathrm{X({}^{23}Ne)} + \\mathrm{X({}^{23}Na)}$",
             sampling_type="local")
-        
+         
+    if slice_field == "A21_ratio":
+        ds.add_field(
+            name=("boxlib", "A21_ratio"),
+            function=_A21_ratio,
+            take_log=False,
+            dimensions='dimensionless',
+            display_name="$\\mathrm{X({}^{21}F)} / \\mathrm{X({}^{21}Ne)}$",
+            sampling_type="local")
+
     if slice_field == "A23_ratio":
         ds.add_field(
             name=("boxlib", "A23_ratio"),
@@ -360,8 +381,10 @@ def plot_slice(ds, slice_field, args):
             units = "dimensionless",
             display_name="$1 - \\mathrm{X}({}^{12}\\mathrm{C})$ ",
             sampling_type="local")
-    if slice_field == "mytan_vel":
-        ds.add_field(('boxlib', 'mytan_vel'), _mytan_vel, units='km/s', sampling_type='local', force_override=True)
+        
+    if slice_field == "mytan_vel" or slice_field == "radvel":
+        ds.add_field(('gas', 'radvel'), _myrad_vel, units='km/s', sampling_type='local', force_override=True)
+        ds.add_field(('gas', 'mytan_vel'), _mytan_vel, units='km/s', sampling_type='local', force_override=True)
 
     # check if include A=21 urca pair in there. include those in calc.
     elif slice_field == "Ye" or slice_field == "Ye_asymmetry" or slice_field == "eta" or slice_field == "rho_Ye":
@@ -485,9 +508,13 @@ def plot_slice(ds, slice_field, args):
             dat_source = ds.sphere(ds.domain_center, (r, 'km'))
         else:
             dat_source = ds.all_data()
-        
-        s = yt.SlicePlot(ds, args.axis, field, width = width, data_source=dat_source)
-        s.flip_vertical()
+
+            try:
+                slice_field = ("gas", field)
+                s = yt.SlicePlot(ds, args.axis, field, width = width, data_source=dat_source)
+            except yt.utilities.exceptions.YTFieldNotFound:
+                s = yt.SlicePlot(ds, args.axis, field, width = width, data_source=dat_source)
+
     else:
         raise ValueError(f"axis argument given ({args.a}) invalid. must be 'x', 'y', or 'z' ")
     
@@ -520,12 +547,13 @@ def plot_slice(ds, slice_field, args):
                        clim=(0.0,0.0), plot_args={'colors' : args.contourcolor})
     
     if args.contour_rho is not None:
-        s.annotate_contour(('boxlib', 'rho'), levels=1, factor=1, take_log=False,
-                       clim=(args.contour_rho,args.contour_rho), plot_args={'colors' : args.contourcolor})
+        for curr_dens in args.contour_rho:
+            s.annotate_contour(('boxlib', 'rho'), levels=1, factor=1, take_log=False,
+                       clim=(curr_dens, curr_dens), plot_args={'colors' : args.contourcolor})
     
     if args.sphere is not None:
         for anno_sphere in args.sphere:
-            s.annotate_sphere(ds.domain_center, (anno_sphere, 'km'))
+            s.annotate_sphere(ds.domain_center, (anno_sphere, 'km'), circle_args={'color':args.sphcolor})
         
     if args.contour_Urca21:
         s.annotate_contour(('boxlib', 'A21_frac'), levels=1, factor=1, take_log=False,
