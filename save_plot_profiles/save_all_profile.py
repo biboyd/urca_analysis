@@ -49,7 +49,7 @@ def save_profile(fname):
                         ("gas", "velocity_z_squared")]
 
     prof_fields = ds.field_list + additional_fields
-    prof = yt.create_profile(ds.all_data(), 'radius', prof_fields, n_bins=320, extrema={'radius':(0, 8e7)}, logs={'radius':False})
+    prof = yt.create_profile(ds.all_data(), 'radius', prof_fields, n_bins=400, extrema={'radius':(0, 1e8)}, logs={'radius':False})
 
     #save as csv for easy access later
     df = prof.to_dataframe(include_std=True).to_csv(f"profiles/{ds.basename}_all_fields.csv")

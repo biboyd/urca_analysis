@@ -3,11 +3,14 @@ import unyt
 import numpy as np
 from sys import argv
 
+def _mass(field, data):
+    return data[("boxlib", "rho")]*data[("gas", "volume")] * unyt.g / unyt.cm**3
+
 def _beta_rate(field, data):
-    return data[("boxlib", "A23_beta_decay_rate")]/data[("boxlib", "X(ne23)")] /unyt.s
+    return data[("boxlib", "A23_beta_decay_rate")]/data[("boxlib", "X(Ne23)")] / unyt.s
 
 def _ecap_rate(field, data):
-    return data[("boxlib", "A23_electron_capture_rate")]/data[("boxlib", "X(na23)")]/unyt.s
+    return data[("boxlib", "A23_electron_capture_rate")]/data[("boxlib", "X(Na23)")] / unyt.s
 
 def _mass_beta(field, data):
     return data[("boxlib", "raw beta rate")] * data[("gas", "mass")]
@@ -16,7 +19,7 @@ def _mass_ecap(field, data):
     return data[("boxlib", "raw ecap rate")] * data[("gas", "mass")]
 
 def _energy_rate(field, data):
-    return data[('boxlib', 'Hnuc')] * data[('gas', 'mass')]
+    return data[('boxlib', 'Hnuc')]*unyt.erg/unyt.s/unyt.g * data[('gas', 'mass')]
 
 def _tot_nu_loss(field, data):
     return  (data['thermal_nu_loss'] -1.0 * data[ 'A23_electron_capture_nu_loss']  -1.0 * data[ 'A23_beta_decay_nu_loss'] )* unyt.erg/unyt.g/unyt.s
@@ -29,13 +32,28 @@ fname = argv[1]
 
 # load plotfiles
 ds = yt.load(f"{fname}")
-ds_nu = yt.load(f"{fname}_nu")
+ds_nu = yt.load(f"nu_loss.{fname}")
+
+ds.add_field(
+    name=("gas", "mass"),
+    function=_mass,
+    take_log=True,
+    units='g',
+    sampling_type="local")
+
 
 ds.add_field(name=('boxlib', 'energy_rate'), 
             function=_energy_rate, 
             take_log=True, 
             units='erg/s', 
             sampling_type='local')
+
+ds_nu.add_field(
+    name=("gas", "mass"),
+    function=_mass,
+    take_log=True,
+    units='g',
+    sampling_type="local")
 
 
 ds_nu.add_field(
