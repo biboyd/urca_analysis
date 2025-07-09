@@ -83,7 +83,7 @@ def sum_energies(data_arr):
     # grab nu losses
     nu_loss_arr = integrate_nu_loss(time_arr, energy_arr[3, :])
     # just add vals to match time array length
-    nu_loss_arr = np.concat(([0.], nu_loss_arr, nu_loss_arr[-1]))
+    nu_loss_arr = np.concat(([0.], nu_loss_arr, [nu_loss_arr[-1]]))
 
     return stellar_arr, nuc_arr, nu_loss_arr,
 
@@ -155,7 +155,7 @@ def integrate_nu_loss(time_arr, nu_loss_arr):
     delta_t_arr = (time_arr[2:] - time_arr[:-2])/2.
 
     # multiply nu loss rates by delta t
-    integrated_nu_losses = np.sum(delta_t_arr * nu_loss_arr[1:-1])
+    integrated_nu_losses = np.cumsum(delta_t_arr * nu_loss_arr[1:-1])
 
     return integrated_nu_losses
 
@@ -203,9 +203,9 @@ def calc_nuc_mass_loss(mass_loss_arr, iso_name=None, composition=None):
 
     # calc the bind energy of mass lost off the grid
     nuc_loss = np.zeros_like(mass_loss_arr)
-    nuc_loss = mass_loss_arr * spec_bind * N_A
+    nuc_loss = mass_loss_arr*unyt.g * spec_bind * N_A
 
-    return nuc_loss
+    return nuc_loss.in_cgs().value
 
 
 def load_data(topdir='./'):
@@ -237,7 +237,7 @@ def load_data(topdir='./'):
     """
 
     # directory names rel to topdir
-    urca_dir = 'bstate_urca_0.9Mconv_large'
+    urca_dir = 'bstate_on_urca_0.9Mconv_large/'
     no_urca_dir = 'no_urca_0.9Mconv_large'
 
     # load nuc data
@@ -255,7 +255,7 @@ def load_data(topdir='./'):
     int_no = int_no[:, np.argsort(int_no[0, :])]
 
     # load gravitational energy data
-    grav_urca = np.load(f"{topdir}/{no_urca_dir}/grav_energy_overtime.npy")
+    grav_urca = np.load(f"{topdir}/{urca_dir}/grav_energy_overtime.npy")
     grav_urca = grav_urca[:, np.argsort(grav_urca[0, :])]
     grav_urca = grav_urca[:, 1:]  # skip first index as its t=0
 
@@ -263,7 +263,7 @@ def load_data(topdir='./'):
     grav_no = grav_no[:, np.argsort(grav_no[0, :])]
 
     # load mass data
-    mass_urca = np.load(f"{topdir}/{no_urca_dir}/mass_overtime.npy")
+    mass_urca = np.load(f"{topdir}/{urca_dir}/mass_overtime.npy")
     mass_urca = mass_urca[:, np.argsort(mass_urca[0,:])]
     mass_urca = mass_urca[:, 1:]  # skip first index as its t=0
 
@@ -271,7 +271,7 @@ def load_data(topdir='./'):
     mass_no = mass_no[:, np.argsort(mass_no[0, :])]
 
     # load neutrino loss data
-    nu_loss_urca = np.load(f"{topdir}/{no_urca_dir}/nu_loss_overtime.npy")
+    nu_loss_urca = np.load(f"{topdir}/{urca_dir}/nu_loss_overtime.npy")
     nu_loss_urca = nu_loss_urca[:, np.argsort(nu_loss_urca[0,:])]
     nu_loss_urca = nu_loss_urca[:, 1:]  # skip first index as its t=0
 
@@ -279,8 +279,8 @@ def load_data(topdir='./'):
     nu_loss_no = nu_loss_no[:, np.argsort(nu_loss_no[0, :])]
 
     # combine energy data
-    energy_urca = np.vstack((nuc_urca[1, :], int_urca[1, :], grav_urca[1, :], nu_loss_urca))
-    energy_no = np.vstack((nuc_no[1, :], int_no[1, :], grav_no[1, :], nu_loss_no))
+    energy_urca = np.vstack((nuc_urca[1, :], int_urca[1, :], grav_urca[1, :], nu_loss_urca[:, 1]))
+    energy_no = np.vstack((nuc_no[1, :], int_no[1, :], grav_no[1, :], nu_loss_no[:, 1]))
 
     # calc mass loss
     mass_loss_urca = mass_urca[1, :] - mass_urca[1, 0]
@@ -294,19 +294,19 @@ def load_data(topdir='./'):
 
 def main(data_dir="./", outdir='./'):
     # load in data
-    overtime_data = load_data(top_dir=data_dir)
-    urca_data = overtime_data[:2]
-    no_data = overtime_data[2:]
+    overtime_data = load_data(topdir=data_dir)
+    urca_data = overtime_data[:3]
+    no_data = overtime_data[3:]
 
     energies_urca = sum_energies(urca_data)
     energies_no = sum_energies(no_data)
 
     # plot all energies
-    fig_energy, ax = plot_energy(*energies_urca, *energies_no)
+    fig_energy, ax = plot_energy(urca_data[0], *energies_urca, no_data[0], *energies_no)
     fig_energy.savefig(f"{outdir}/energies_overtime.png", dpi=300)
 
     # plot energy differences
-    fig_diff, ax = plot_energy_diff(*energies_urca, *energies_no)
+    fig_diff, ax = plot_energy_diff(urca_data[0], *energies_urca, no_data[0], *energies_no)
     fig_diff.savefig(f"{outdir}/net_energy_diff_overtime.png", dpi=300)
 
 
