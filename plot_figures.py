@@ -191,6 +191,21 @@ def _A23_tot(field, data):
 
 def _mytan_vel(field, data):
         return np.sqrt(data[('boxlib', 'magvel')]**2 -  data[('boxlib', 'radial_velocity')]**2)
+
+# electron fraction if just A=23
+def _Ye23dot(field, data):
+    # sum 1/2
+    Yedot=0.5*(data['boxlib', 'omegadot(c12)']+data['boxlib', 'omegadot(o16)']+data['boxlib', 'omegadot(he4)']+data['boxlib', 'omegadot(ne20)'])
+    
+    #sum ones
+    Yedot+=(data['boxlib', 'omegadot(h1)'])
+    
+    #A=23 nuc
+    Yedot+= (10.*data['boxlib', 'omegadot(ne23)'] + 11.*data['boxlib', 'omegadot(na23)'] + 12.*data['boxlib', 'omegadot(mg23)'])/23.
+    
+    return Yedot
+
+
 # electron fraction if just A=23
 def _Ye23(field, data):
     # sum 1/2
@@ -363,6 +378,8 @@ def plot_slice(ds, slice_field, args):
     if slice_field == "mytan_vel":
         ds.add_field(('boxlib', 'mytan_vel'), _mytan_vel, units='km/s', sampling_type='local', force_override=True)
 
+    if slice_field == "yedot":
+        ds.add_field(('boxlib', 'yedot'), _Ye23dot, units='1/s', sampling_type='local', force_override=True)
     # check if include A=21 urca pair in there. include those in calc.
     elif slice_field == "Ye" or slice_field == "Ye_asymmetry" or slice_field == "eta" or slice_field == "rho_Ye":
         if ("boxlib", "X(ne21)") in ds.field_list:
@@ -525,7 +542,7 @@ def plot_slice(ds, slice_field, args):
     
     if args.sphere is not None:
         for anno_sphere in args.sphere:
-            s.annotate_sphere(ds.domain_center, (anno_sphere, 'km'))
+            s.annotate_sphere(ds.domain_center, (anno_sphere, 'km'), circle_args={'color' : args.contourcolor}) 
         
     if args.contour_Urca21:
         s.annotate_contour(('boxlib', 'A21_frac'), levels=1, factor=1, take_log=False,
