@@ -40,12 +40,12 @@ def plot_energy(time_urca, stellar_urca, nuc_urca, nu_loss_urca,
 
     # plot Urca portion
     l_urca, = ax.plot(time_urca, stellar_urca-stellar_urca[0], '-', label="Urca: Int+Grav")
-    ax.plot(time_urca, nuc_urca-nuc_urca[0], '--', color=l_urca.get_color(), label="Urca: Nuc")
+    ax.plot(time_urca, np.abs(nuc_urca-nuc_urca[0]), '--', color=l_urca.get_color(), label="Urca: -Nuc")
     ax.plot(time_urca, nu_loss_urca, '.-', color=l_urca.get_color(), label="Urca: Nu loss")
 
     # plot No Urca portion
     l_no, = ax.plot(time_no, stellar_no-stellar_no[0], '-', label="No Urca: Int+Grav")
-    ax.plot(time_no, nuc_no-nuc_no[0], '--', color=l_no.get_color(), label="No Urca: Nuc")
+    ax.plot(time_no, np.abs(nuc_no-nuc_no[0]), '--', color=l_no.get_color(), label="No Urca: -Nuc")
     ax.plot(time_no, nu_loss_no, '.-', color=l_no.get_color(), label="No Urca: Nu loss")
 
     ax.set_xlabel("Time (s)")
@@ -78,14 +78,14 @@ def sum_energies(data_arr):
     stellar_arr = energy_arr[1, :] + energy_arr[2, :]
 
     # adjust nuc for mass loss
-    nuc_arr = energy_arr[0, :] + calc_nuc_mass_loss(mass_loss_arr)
+    nuc_arr = energy_arr[0, :] - calc_nuc_mass_loss(mass_loss_arr)
 
     # grab nu losses
     nu_loss_arr = integrate_nu_loss(time_arr, energy_arr[3, :])
     # just add vals to match time array length
     nu_loss_arr = np.concat(([0.], nu_loss_arr, [nu_loss_arr[-1]]))
 
-    return stellar_arr, nuc_arr, nu_loss_arr,
+    return stellar_arr, nuc_arr, nu_loss_arr
 
 
 def plot_energy_diff(time_urca, stellar_urca, nuc_urca, nu_loss_urca,
@@ -123,8 +123,8 @@ def plot_energy_diff(time_urca, stellar_urca, nuc_urca, nu_loss_urca,
     fig, ax = plt.subplots(1, 1)
 
     # sum Energies
-    energy_diff_urca = stellar_urca - nuc_urca + nu_loss_urca
-    energy_diff_no = stellar_no - nuc_no + nu_loss_no
+    energy_diff_urca = stellar_urca + nuc_urca + nu_loss_urca
+    energy_diff_no = stellar_no + nuc_no + nu_loss_no
 
     # plot Urca portion
     ax.plot(time_urca, energy_diff_urca, '-', label="Urca")
@@ -272,11 +272,10 @@ def load_data(topdir='./'):
 
     # load neutrino loss data
     nu_loss_urca = np.load(f"{topdir}/{urca_dir}/nu_loss_overtime.npy")
-    nu_loss_urca = nu_loss_urca[:, np.argsort(nu_loss_urca[0,:])]
-    nu_loss_urca = nu_loss_urca[:, 1:]  # skip first index as its t=0
+    nu_loss_urca = nu_loss_urca[np.argsort(nu_loss_urca[:, 0]), :]
 
     nu_loss_no = np.load(f"{topdir}/{no_urca_dir}/nu_loss_overtime.npy")
-    nu_loss_no = nu_loss_no[:, np.argsort(nu_loss_no[0, :])]
+    nu_loss_no = nu_loss_no[np.argsort(nu_loss_no[:, 0]), :]
 
     # combine energy data
     energy_urca = np.vstack((nuc_urca[1, :], int_urca[1, :], grav_urca[1, :], nu_loss_urca[:, 1]))
