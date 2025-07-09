@@ -38,13 +38,13 @@ output = np.zeros((len(all_files), 3), dtype=np.float64) -1.
 
 #previous data
 try:
-    old_energy_time = np.load("nu_loss_over_time.npy")
+    old_energy_time = np.load("nu_loss_overtime.npy")
     check_old = True
 except FileNotFoundError:
     check_old = False
     print("Could not find old file, will be calculating for each plot-file")
 
-for j, file in enumerate(all_files):
+for j, file in enumerate(np.sort(all_files)):
     if file:
         
         ds = yt.load(f"{plots_dir}/{file}")
@@ -93,5 +93,5 @@ plt.plot(sorted_output[:, 0], sorted_output[:, 1])
 plt.ylabel("Energy Loss to Neutrino Emission (erg/s)")
 plt.xlabel("Simulation Time (s)")
 
-plt.savefig("nu_loss_over_time.png")
-np.save("nu_loss_over_time.npy", sorted_output)
+plt.savefig("nu_loss_overtime.png")
+np.save("nu_loss_overtime.npy", sorted_output)
