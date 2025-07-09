@@ -29,7 +29,6 @@ parser.add_argument('-s', '--streamlines', help='plot streamlines', default=Fals
 parser.add_argument('-arr', '--arrows', help='plot velocity arrows', default=False, action='store_true')
 parser.add_argument('-lc', '--linecolor', type=str, help='color for streamlines', default='black')
 parser.add_argument('-cc', '--contourcolor', type=str, help='contour color', default='black')
-parser.add_argument('-sphc', '--sphcolor', type=str, help='sphere color', default='white')
 parser.add_argument('-z', '--conv_zone', help='plot just convection zone', default=False, action='store_true')
 parser.add_argument('-fs', '--fontsize', type=int, help='fontsize for plot', default=None)
 parser.add_argument('-at', '--annotate_text', type=str, help='text to annotate', default=None)
@@ -42,7 +41,6 @@ args = parser.parse_args()
 
 default_uselog = {"magvel" : None,
                   "radial_velocity" : True,
-                  "tangential_velocity" : False,
                   "Hnuc" : None,
                   "MachNumber" : None,
                   "tfromp" : False,
@@ -53,6 +51,7 @@ default_uselog = {"magvel" : None,
                   "Ye_asymmetry" : False,
                   "mu" : False,
                   "vort" : False,
+                  "tpert" : False
 
                  }
 
@@ -81,11 +80,11 @@ default_zlim = {"magvel" : [1e-1, 1e2],
                 "ad_excess" : [-0.5, 0.5],
                 "ad_excess_led" : [-0.5, 0.5],
                 "vort" : [0., 6.],
+                "tpert" : [-5e5, 5e5]
                 }
 
 default_cmap = {"magvel" : "cividis",
                 "radial_velocity" : "RdBu_r",
-                "tangential_velocity" : "cividis",
                 "Hnuc" : 'PiYG',
                 "MachNumber" : 'cividis',
                 "tfromp" : 'magma',
@@ -145,7 +144,6 @@ default_outdir = {"magvel": "plots_magvel/",
                   "A23_ratio" : "plots_A23_ratio/",
                   "A25_ratio" : "plots_A25_ratio/",
                   "vort" : "plots_vorticity/",
-                  "tangential_velocity" : "plots_tanvel/",
                   "ad_excess" : "plots_ad_excess/",
                   "ad_excess_led" : "plots_ad_excess_led/",
                   "tpert" : "plots_tpert/",
@@ -196,42 +194,18 @@ def _A23_tot(field, data):
     #A=23 nuc
     return(data['boxlib', 'X(Ne23)'] + data['boxlib', 'X(Na23)'])
 
-def _myrad_vel(field, data):
-        return (((data['gas', 'x'] - 2.56e8*u.cm)*data[('boxlib', 'velx')]) + 
-               ((data['gas', 'y'] - 2.56e8*u.cm)*data[('boxlib', 'vely')]) +    
-               ((data['gas', 'z'] - 2.56e8*u.cm)*data[('boxlib', 'velz')]))/data['index', 'radius']
 def _mytan_vel(field, data):
-<<<<<<< HEAD
         return np.sqrt(data[('boxlib', 'magvel')]**2 -  data[('boxlib', 'radial_velocity')]**2)
-
-# electron fraction if just A=23
-def _Ye23dot(field, data):
-    # sum 1/2
-    Yedot=0.5*(data['boxlib', 'omegadot(c12)']+data['boxlib', 'omegadot(o16)']+data['boxlib', 'omegadot(he4)']+data['boxlib', 'omegadot(ne20)'])
-    
-    #sum ones
-    Yedot+=(data['boxlib', 'omegadot(h1)'])
-    
-    #A=23 nuc
-    Yedot+= (10.*data['boxlib', 'omegadot(ne23)'] + 11.*data['boxlib', 'omegadot(na23)'] + 12.*data['boxlib', 'omegadot(mg23)'])/23.
-    
-    return Yedot
-
-
-=======
-        return np.sqrt(data[('boxlib', 'magvel')]**2 -  data[('gas', 'radvel')]**2)
-    
->>>>>>> 7bd95462c25caee4ea3012c9ccc6cefe52f02830
 # electron fraction if just A=23
 def _Ye23(field, data):
     # sum 1/2
-    Ye=0.5*(data['boxlib', 'X(C12)']+data['boxlib', 'X(O16)']+data['boxlib', 'X(He4)']+data['boxlib', 'X(Ne20)'])
+    Ye=0.5*(data['boxlib', 'X(c12)']+data['boxlib', 'X(o16)']+data['boxlib', 'X(he4)']+data['boxlib', 'X(ne20)'])
     
     #sum ones
-    Ye+=(data['boxlib', 'X(H1)'])
+    Ye+=(data['boxlib', 'X(h1)'])
     
     #A=23 nuc
-    Ye+= (10.*data['boxlib', 'X(Ne23)'] + 11.*data['boxlib', 'X(Na23)'] + 12.*data['boxlib', 'X(Mg23)'])/23.
+    Ye+= (10.*data['boxlib', 'X(ne23)'] + 11.*data['boxlib', 'X(na23)'] + 12.*data['boxlib', 'X(mg23)'])/23.
     
     return Ye
 
@@ -400,13 +374,9 @@ def plot_slice(ds, slice_field, args):
             units = "dimensionless",
             display_name="$1 - \\mathrm{X}({}^{12}\\mathrm{C})$ ",
             sampling_type="local")
-        
-    if slice_field == "mytan_vel" or slice_field == "radvel":
-        ds.add_field(('gas', 'radvel'), _myrad_vel, units='km/s', sampling_type='local', force_override=True)
-        ds.add_field(('gas', 'mytan_vel'), _mytan_vel, units='km/s', sampling_type='local', force_override=True)
+    if slice_field == "mytan_vel":
+        ds.add_field(('boxlib', 'mytan_vel'), _mytan_vel, units='km/s', sampling_type='local', force_override=True)
 
-    if slice_field == "yedot":
-        ds.add_field(('boxlib', 'yedot'), _Ye23dot, units='1/s', sampling_type='local', force_override=True)
     # check if include A=21 urca pair in there. include those in calc.
     elif slice_field == "Ye" or slice_field == "Ye_asymmetry" or slice_field == "eta" or slice_field == "rho_Ye":
         if ("boxlib", "X(ne21)") in ds.field_list:
@@ -529,13 +499,9 @@ def plot_slice(ds, slice_field, args):
             dat_source = ds.sphere(ds.domain_center, (r, 'km'))
         else:
             dat_source = ds.all_data()
-
-            try:
-                slice_field = ("gas", field)
-                s = yt.SlicePlot(ds, args.axis, field, width = width, data_source=dat_source)
-            except yt.utilities.exceptions.YTFieldNotFound:
-                s = yt.SlicePlot(ds, args.axis, field, width = width, data_source=dat_source)
-
+        
+        s = yt.SlicePlot(ds, args.axis, field, width = width, data_source=dat_source)
+        s.flip_vertical()
     else:
         raise ValueError(f"axis argument given ({args.a}) invalid. must be 'x', 'y', or 'z' ")
     
@@ -574,7 +540,7 @@ def plot_slice(ds, slice_field, args):
     
     if args.sphere is not None:
         for anno_sphere in args.sphere:
-            s.annotate_sphere(ds.domain_center, (anno_sphere, 'km'), circle_args={'color':args.sphcolor})
+            s.annotate_sphere(ds.domain_center, (anno_sphere, 'km'))
         
     if args.contour_Urca21:
         s.annotate_contour(('boxlib', 'A21_frac'), levels=1, factor=1, take_log=False,

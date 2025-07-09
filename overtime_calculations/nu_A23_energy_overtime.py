@@ -19,10 +19,10 @@ def _tot_nu_loss(field, data):
 
 
 def _tot_energy_loss(field, data):
-    return data[('boxlib', 'tot_nu_loss')]*data[('gas', 'mass')]
+    return data[('boxlib', 'tot_nu_loss')] * data[('gas', 'mass')]
 
 def _mass(field, data):
-    return data[('boxlib', 'density')] * data[('boxlib', 'volume')]
+    return data[('boxlib', 'rho')] * data[('boxlib', 'volume')] * unyt.g/unyt.cm**3
 
 
 
@@ -40,7 +40,7 @@ if len(argv) == 2:
 else:
     rad = None#482.4 #default myfix radius
     
-plots_dir="plotfiles"
+plots_dir="nuloss_plotfiles/"
 all_files = listdir(plots_dir)
 output = np.zeros((len(all_files), 3), dtype=np.float64) -1.
 
@@ -53,7 +53,7 @@ except FileNotFoundError:
     print("Could not find old file, will be calculating for each plot-file")
 
 for j, file in enumerate(all_files):
-    if file[:3] == "plt" and file[-3:] == "_nu":
+    if file:
         
         ds = yt.load(f"{plots_dir}/{file}")
                  
@@ -98,7 +98,7 @@ for j, file in enumerate(all_files):
             sampling_type="local", force_override=True)
 
         sim_time = ds.current_time
-        timestep = float(ds.basename.removeprefix("plt").removesuffix("_nu"))
+        timestep = float(ds.basename.removeprefix("nu_loss.plt"))
         
         #ignore early times
         if sim_time < ds.quan(200, 's'):
@@ -110,7 +110,7 @@ for j, file in enumerate(all_files):
                 output[j, :] = old_energy_time[idx, :]
                 
             else:
-                sph = ds.sphere(ds.domain_center, (800, 'km'))
+                sph = ds.sphere(ds.domain_center, (2e3, 'km'))
                 tot_energy_loss = sph.sum(('boxlib', 'tot_energy_loss'))
                 #print(outflow_mean, inflow_mean, r, timescale, ds.basename)
                 output[j, :] = [sim_time, tot_energy_loss, timestep]

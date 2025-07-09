@@ -6,26 +6,26 @@ from os import listdir
 import pandas as pd
 
 def _urca_mass(field, data):
-    return (data[('boxlib', 'X(na23)')] + data[('boxlib', 'X(ne23)')]) * data[('gas', 'mass')]
+    return (data[('boxlib', 'X(Na23)')] + data[('boxlib', 'X(Ne23)')]) * data[('gas', 'mass')]
 
 def _c12_mass(field, data):
-    return (data[('boxlib', 'X(c12)')]) * data[('gas', 'mass')]
+    return (data[('boxlib', 'X(C12)')]) * data[('gas', 'mass')]
 
 def _urca_mass_rate(field, data):
-    return data[('gas', 'mass')] * (data[('boxlib', 'omegadot(ne23)')] + data[('boxlib', 'omegadot(na23)')])
+    return data[('gas', 'mass')] * (data[('boxlib', 'omegadot(Ne23)')] + data[('boxlib', 'omegadot(Na23)')])
 
 def _c12_mass_rate(field, data):
-    return data[('gas', 'mass')] * (data[('boxlib', 'omegadot(c12)')])
+    return data[('gas', 'mass')] * (data[('boxlib', 'omegadot(C12)')])
 
 # okay grab all the files I can
 yt.set_log_level(40)
 
 if len(argv) == 1:
-    plots_dir = "small_plotfiles"
+    plots_dir = "plotfiles"
 else:
     plots_dir = argv[1]
 
-all_files = listdir(plots_dir)
+all_files = np.sort(listdir(plots_dir))
 
 conv_c12mass_out = np.zeros((len(all_files), 3), dtype=np.float64) -1. 
 conv_c12rate_out = np.zeros((len(all_files), 3), dtype=np.float64) -1. 
@@ -69,9 +69,9 @@ for j, file in enumerate(all_files):
             continue
         else:
             ds.add_field(('gas', 'urca_mass'), _urca_mass, 'local', units='Msun', force_override=True)
-            ds.add_field(('gas', 'c12_mass'), _c12_mass, 'local', units='Msun', force_override=True)
+            ds.add_field(('gas', 'C12_mass'), _c12_mass, 'local', units='Msun', force_override=True)
             ds.add_field(('gas', 'urca_mass_rate'), _urca_mass_rate, 'local', units='Msun/hr', force_override=True)
-            ds.add_field(('gas', 'c12_mass_rate'), _c12_mass_rate, 'local', units='Msun/hr', force_override=True)
+            ds.add_field(('gas', 'C12_mass_rate'), _c12_mass_rate, 'local', units='Msun/hr', force_override=True)
             
             if not calc_all:
                 # check if already calculated
@@ -102,16 +102,16 @@ for j, file in enumerate(all_files):
                     continue
                 
                 #full wd sphere
-                tot_sph = ds.sphere(ds.domain_center, (1.6e3, 'km'))
+                tot_sph = ds.sphere(ds.domain_center, (2e3, 'km'))
                 
-                conv_c12_mass  = conv_sph.sum(('gas', 'c12_mass'))
-                conv_c12_rate  = conv_sph.sum(('gas', 'c12_mass_rate'))
+                conv_c12_mass  = conv_sph.sum(('gas', 'C12_mass'))
+                conv_c12_rate  = conv_sph.sum(('gas', 'C12_mass_rate'))
         
                 conv_urca_mass = conv_sph.sum(('gas', 'urca_mass'))
                 conv_urca_rate = conv_sph.sum(('gas', 'urca_mass_rate'))
                 
-                tot_c12_mass  = tot_sph.sum(('gas', 'c12_mass'))
-                tot_c12_rate  = tot_sph.sum(('gas', 'c12_mass_rate'))
+                tot_c12_mass  = tot_sph.sum(('gas', 'C12_mass'))
+                tot_c12_rate  = tot_sph.sum(('gas', 'C12_mass_rate'))
                 
                 tot_urca_mass = tot_sph.sum(('gas', 'urca_mass'))
                 tot_urca_rate = tot_sph.sum(('gas', 'urca_mass_rate'))
@@ -131,8 +131,8 @@ for j, file in enumerate(all_files):
         
 
 # sort the arrays
-all_names_out = ["conv_c12mass", "conv_c12rate", "conv_urca_mass", "conv_urca_rate",
-                 "tot_c12mass", "tot_c12rate", "tot_urca_mass", "tot_urca_rate"] 
+all_names_out = ["conv_C12mass", "conv_C12rate", "conv_urca_mass", "conv_urca_rate",
+                 "tot_C12mass", "tot_C12rate", "tot_urca_mass", "tot_urca_rate"] 
 
 for arr_out, name in zip(all_arr_out, all_names_out):
     #sort and remove empty
