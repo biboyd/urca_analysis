@@ -8,7 +8,8 @@ m_p = 1.672621777e-24 #g
 m_n = 1.674927351e-24 #g
 m_e = 9.10938291e-28 #g
 
-ds = yt.load("plotfiles/plt0008400/")
+path_to_pfile = "/pscratch/sd/b/biboyd/gpuruns/bstate_on_urca_0.9Mconv_large"
+ds = yt.load(f"{path_to_pfile}/plotfiles/plt0008400/")
 
 comp_list=[]
 bion_list=[]

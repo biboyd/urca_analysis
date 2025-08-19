@@ -6,16 +6,16 @@ from sys import argv
 
 @yt.derived_field(name=("gas", "mass"), units='g', sampling_type='local')
 def _mass(field, data):
-    return data["boxlib", "rho"]*unyt.g/unyt.cm**3 * data['boxlib', 'volume']
+    return data["boxlib", "rho"] * data['boxlib', 'volume']
 
 @yt.derived_field(name=("gas", "energy_rate"), units='erg/s', sampling_type='local')
 def _energy_rate(field, data):
-    return data[('boxlib', 'Hnuc')] * data[('gas', 'mass')] * unyt.erg/unyt.g/unyt.s
+    return data[('boxlib', 'Hnuc')] * data[('gas', 'mass')]
 
 
 @yt.derived_field(name=("gas", "kinetic_energy"), units='erg', sampling_type='local')
 def _energy_rate(field, data):
-    return 0.5 * (data[('boxlib', 'velx')]**2 + data[('boxlib', 'vely')]**2 + data[('boxlib', 'velz')]**2)   * data[('gas', 'mass')] * unyt.cm**2/unyt.s**2
+    return 0.5 * (data[('boxlib', 'velx')]**2 + data[('boxlib', 'vely')]**2 + data[('boxlib', 'velz')]**2)   * data[('gas', 'mass')]
 
 def plot_nuc_energy(df):
     # plot nuc energy

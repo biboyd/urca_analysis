@@ -6,7 +6,6 @@ from os import listdir
 
 G = unyt.gravitational_constant_cgs
 
-ds = yt.load("plotfiles/plt0008400/")
 
 @yt.derived_field(name=("gas", "mass"), units='g', sampling_type='local')
 def _mass(field, data):
