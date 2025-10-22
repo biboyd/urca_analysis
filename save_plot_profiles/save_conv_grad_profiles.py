@@ -44,7 +44,7 @@ def plot_conv_grad(df):
 def main(ds):
   
   prof_fields = [('boxlib', 'ratio_ad'), ('boxlib', 'ratio_ledoux'), ('boxlib', 'del_ad'), ('boxlib', 'del')]
-  prof = yt.create_profile(ds.all_data(), 'radius', prof_fields,weight_field='volume', n_bins=400, logs={'radius':False}, extrema={'radius':[0., 1e8]} )
+  prof = yt.create_profile(ds.all_data(), 'radius', prof_fields,weight_field='volume', n_bins=100, logs={'radius':False}, extrema={'radius':[0., 1e8]} )
 
   df = prof.to_dataframe(include_std=True).dropna()
 

@@ -3,7 +3,7 @@
 #SBATCH --account=m3018
 #SBATCH --nodes=1
 #SBATCH --tasks-per-node=8
-#SBATCH --mem=48G
+#SBATCH --mem=64G
 #SBATCH --qos=shared
 #SBATCH --time=00:30:00
 #SBATCH --constraint=cpu
