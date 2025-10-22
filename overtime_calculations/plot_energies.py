@@ -56,6 +56,96 @@ def plot_energy(time_urca, stellar_urca, nuc_urca, nu_loss_urca,
     return fig, ax
 
 
+def plot_energy_rate(time_urca, stellar_urca, nuc_urca, nu_loss_urca,
+                time_no, stellar_no, nuc_no, nu_loss_no):
+    """
+    inputs:
+    ---------
+
+    time_urca [arr]:    array holding the time for each snapshot in the Urca
+                        simulation
+    stellar_urca [arr]: sum of internal and gravitational energy for
+                        each snapshot
+    nuc_urca [arr]: The nuclear binding energy adjusted for mass loss
+                    for each snaphshot
+    nu_loss_urca [arr]: estimated total energy lost to neutrinos (erg)
+
+
+    time_no [arr]:      array holding the time for each snapshot in the no
+                        Urca simulation
+                        simulation
+    stellar_no [arr]: sum of internal and gravitational energy for
+                        each snapshot
+    nuc_no [arr]: The nuclear binding energy adjusted for mass loss
+                    for each snaphshot
+    nu_loss_no [arr]: estimated total energy lost to neutrinos (erg)
+
+    outputs:
+    ---------
+
+    fig [plt.Figure] figure object of the plot
+    ax [plt.axes] axes of the plot
+    """
+
+    fig, axes = plt.subplots(1, 2, sharex=True, figsize=(12, 4))
+    axl, axr = axes
+
+    # time ranges
+    t_start = 1500.
+    t_end = 2800.
+
+    idx_start_urca = np.argmin(np.abs(t_start - time_urca))
+    idx_end_urca = np.argmin(np.abs(t_end - time_urca))
+
+    idx_start_no = np.argmin(np.abs(t_start - time_no))
+    idx_end_no = np.argmin(np.abs(t_end - time_no))
+
+    r_time_urca = time_urca[idx_start_urca:idx_end_urca]
+    r_time_no = time_no[idx_start_no:idx_end_no]
+
+    # calc rates
+    stell_rates_urca = (stellar_urca[-1] - stellar_urca[idx_start_urca:idx_end_urca])/(time_urca[-1] - r_time_urca)
+    nuc_rates_urca = -(nuc_urca[-1] - nuc_urca[idx_start_urca:idx_end_urca])/(time_urca[-1] - r_time_urca)
+    nu_loss_rates_urca = nu_loss_urca[idx_start_urca:idx_end_urca]
+
+    stell_rates_no = (stellar_no[-1] - stellar_no[idx_start_no:idx_end_no])/(time_no[-1] - r_time_no)
+    nuc_rates_no = -(nuc_no[-1] - nuc_no[idx_start_no:idx_end_no])/(time_no[-1] - r_time_no)
+    nu_loss_rates_no = nu_loss_no[idx_start_no:idx_end_no]
+
+    # plot Urca portion
+    l_urca, = axl.plot(r_time_urca, stell_rates_urca + nu_loss_rates_urca, '-', label="Urca: Int+Grav-(nu loss)")
+    axl.plot(r_time_urca, nuc_rates_urca, '--', color=l_urca.get_color(), label="Urca: -Nuc")
+    #axl.plot(r_time_urca, nu_loss_rates_urca, '.-', color=l_urca.get_color(), label="Urca: Nu loss")
+
+    # plot No Urca portion
+    l_no, = axl.plot(r_time_no, stell_rates_no + nu_loss_rates_no, '-', label="No Urca: Int+Grav-(nu loss)")
+    axl.plot(r_time_no, nuc_rates_no, '--', color=l_no.get_color(), label="No Urca: -Nuc")
+    #axl.plot(r_time_no, nu_loss_rates_no, '.-', color=l_no.get_color(), label="No Urca: Nu loss")
+
+    axl.set_xlabel("Initial Time in rate calculation (s)")
+    axl.set_ylabel("Energy Rate (erg/s)")
+    axl.set_ylim(0.)
+    axl.grid()
+    axl.legend()
+
+
+    # okay now just plot the net diff between all these.
+    net_diff_urca = stell_rates_urca - nuc_rates_urca + nu_loss_rates_urca
+    net_diff_no = stell_rates_no - nuc_rates_no + nu_loss_rates_no
+
+    axr.plot(r_time_urca, net_diff_urca, label="Urca: (Int+Grav+Nu) - Nuc")
+    axr.plot(r_time_no, net_diff_no, label="No Urca: (Int+Grav+Nu) - Nuc")
+
+    axr.set_xlabel("Initial Time in rate calculation (s)")
+    axr.set_ylabel("Energy Rate (erg/s)")
+    axr.grid()
+    axr.legend()
+
+    fig.tight_layout()
+    return fig, axes
+
+
+
 def sum_energies(data_arr):
     """
     inputs:
@@ -78,12 +168,10 @@ def sum_energies(data_arr):
     stellar_arr = energy_arr[1, :] + energy_arr[2, :]
 
     # adjust nuc for mass loss
-    nuc_arr = energy_arr[0, :] - calc_nuc_mass_loss(mass_loss_arr)
+    nuc_arr = energy_arr[0, :] + calc_nuc_mass_loss(mass_loss_arr)
 
     # grab nu losses
     nu_loss_arr = integrate_nu_loss(time_arr, energy_arr[3, :])
-    # just add vals to match time array length
-    nu_loss_arr = np.concat(([0.], nu_loss_arr, [nu_loss_arr[-1]]))
 
     return stellar_arr, nuc_arr, nu_loss_arr
 
@@ -157,6 +245,10 @@ def integrate_nu_loss(time_arr, nu_loss_arr):
     # multiply nu loss rates by delta t
     integrated_nu_losses = np.cumsum(delta_t_arr * nu_loss_arr[1:-1])
 
+    # just add vals to match time array length
+    next_point = integrated_nu_losses[-1] + delta_t_arr[-1]*nu_loss_arr[-1]
+    integrated_nu_losses = np.concat(([0.], integrated_nu_losses,
+                                      [next_point]))
     return integrated_nu_losses
 
 
@@ -278,12 +370,14 @@ def load_data(topdir='./'):
     nu_loss_no = nu_loss_no[np.argsort(nu_loss_no[:, 0]), :]
 
     # combine energy data
-    energy_urca = np.vstack((nuc_urca[1, :], int_urca[1, :], grav_urca[1, :], nu_loss_urca[:, 1]))
-    energy_no = np.vstack((nuc_no[1, :], int_no[1, :], grav_no[1, :], nu_loss_no[:, 1]))
+    energy_urca = np.vstack((nuc_urca[1, :], int_urca[1, :], grav_urca[1, :],
+                             nu_loss_urca[:, 1]))
+    energy_no = np.vstack((nuc_no[1, :], int_no[1, :], grav_no[1, :],
+                           nu_loss_no[:, 1]))
 
     # calc mass loss
-    mass_loss_urca = mass_urca[1, :] - mass_urca[1, 0]
-    mass_loss_no = mass_no[1, :] - mass_no[1, 0]
+    mass_loss_urca =  mass_urca[1, 0] - mass_urca[1, :]
+    mass_loss_no =  mass_no[1, 0] - mass_no[1, :]
 
     time_urca = mass_urca[0, :]
     time_no = mass_no[0, :]
@@ -297,16 +391,28 @@ def main(data_dir="./", outdir='./'):
     urca_data = overtime_data[:3]
     no_data = overtime_data[3:]
 
+    # split out and clac energies
     energies_urca = sum_energies(urca_data)
     energies_no = sum_energies(no_data)
 
+    nu_loss_rate_urca = urca_data[1][3]
+    nu_loss_rate_no = no_data[1][3]
     # plot all energies
-    fig_energy, ax = plot_energy(urca_data[0], *energies_urca, no_data[0], *energies_no)
+    fig_energy, ax = plot_energy(urca_data[0], *energies_urca, no_data[0],
+                                 *energies_no)
     fig_energy.savefig(f"{outdir}/energies_overtime.png", dpi=300)
 
-    # plot energy differences
-    fig_diff, ax = plot_energy_diff(urca_data[0], *energies_urca, no_data[0], *energies_no)
+    # plot net energy differences
+    fig_diff, ax = plot_energy_diff(urca_data[0], *energies_urca, no_data[0],
+                                    *energies_no)
     fig_diff.savefig(f"{outdir}/net_energy_diff_overtime.png", dpi=300)
+
+    # plot energy rates
+    fig_rate, ax = plot_energy_rate(urca_data[0], energies_urca[0],
+                                    energies_urca[1], nu_loss_rate_urca,
+                                    no_data[0], energies_no[0], energies_no[1],
+                                    nu_loss_rate_no)
+    fig_rate.savefig(f"{outdir}/energy_rates_overtime.png", dpi=300)
 
 
 if __name__ == "__main__":
