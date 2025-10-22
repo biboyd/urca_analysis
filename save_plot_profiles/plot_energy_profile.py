@@ -6,16 +6,21 @@ from sys import argv
 
 @yt.derived_field(name=("gas", "mass"), units='g', sampling_type='local')
 def _mass(field, data):
-    return data["boxlib", "rho"]*unyt.g/unyt.cm**3 * data['boxlib', 'volume']
+    return data["boxlib", "rho"] * data['boxlib', 'volume']
+
+@yt.derived_field(name=("gas", "c12_burn_rate"), units='g/s', sampling_type='local')
+def _mass(field, data):
+    return data["boxlib", "omegadot(C12)"] * data["gas", "mass"]
+
 
 @yt.derived_field(name=("gas", "energy_rate"), units='erg/s', sampling_type='local')
 def _energy_rate(field, data):
-    return data[('boxlib', 'Hnuc')] * data[('gas', 'mass')] * unyt.erg/unyt.g/unyt.s
+    return data[('boxlib', 'Hnuc')] * data[('gas', 'mass')]
 
 
 @yt.derived_field(name=("gas", "kinetic_energy"), units='erg', sampling_type='local')
 def _energy_rate(field, data):
-    return 0.5 * (data[('boxlib', 'velx')]**2 + data[('boxlib', 'vely')]**2 + data[('boxlib', 'velz')]**2)   * data[('gas', 'mass')] * unyt.cm**2/unyt.s**2
+    return 0.5 * (data[('boxlib', 'velx')]**2 + data[('boxlib', 'vely')]**2 + data[('boxlib', 'velz')]**2)   * data[('gas', 'mass')]
 
 def plot_nuc_energy(df):
     # plot nuc energy
@@ -75,7 +80,7 @@ ds = yt.load(argv[1])
 
 # calc and save energy rate profile
 N_bins = 100
-fields = [('gas', 'energy_rate'), ('gas', 'kinetic_energy')]
+fields = [('gas', 'energy_rate'), ('gas', 'kinetic_energy'), ('gas', 'mass'), ("gas", "c12_burn_rate")]
 tot_nuc_prof = yt.create_profile(ds.all_data(), 'radius', fields, weight_field=None, logs={'radius':False}, n_bins=N_bins, extrema={'radius':(0, 1e8)})
 df = tot_nuc_prof.to_dataframe()
 df.to_csv(f"{ds.basename}_nuc_and_kin_energy.csv")

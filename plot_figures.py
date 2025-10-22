@@ -201,7 +201,6 @@ def _myrad_vel(field, data):
                ((data['gas', 'y'] - 2.56e8*u.cm)*data[('boxlib', 'vely')]) +    
                ((data['gas', 'z'] - 2.56e8*u.cm)*data[('boxlib', 'velz')]))/data['index', 'radius']
 def _mytan_vel(field, data):
-<<<<<<< HEAD
         return np.sqrt(data[('boxlib', 'magvel')]**2 -  data[('boxlib', 'radial_velocity')]**2)
 
 # electron fraction if just A=23
@@ -218,10 +217,6 @@ def _Ye23dot(field, data):
     return Yedot
 
 
-=======
-        return np.sqrt(data[('boxlib', 'magvel')]**2 -  data[('gas', 'radvel')]**2)
-    
->>>>>>> 7bd95462c25caee4ea3012c9ccc6cefe52f02830
 # electron fraction if just A=23
 def _Ye23(field, data):
     # sum 1/2

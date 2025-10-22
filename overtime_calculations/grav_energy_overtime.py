@@ -37,6 +37,7 @@ for f in np.sort(listdir("plotfiles/")):
                 tot_grav_energy -= 4 * np.pi * G * m_enc * rad[i] * rho[i] * dr
             else:
                 break
+        print(m_enc)
         grav_list.append(tot_grav_energy)    
         t_list.append(ds.current_time)
 
