@@ -35,7 +35,7 @@ def add_nuloss_fields(ds_nu, nu_field_list):
     # add individual mass multi fields
     for fld in nu_field_list:
 
-        ds_nu.add_field(name=('gas', 'tot_{fld}'),
+        ds_nu.add_field(name=('gas', f"tot_{fld}"),
                         function=lambda field, data: -1 * data[fld] * data[('gas', 'mass')] * unyt.erg/unyt.g/unyt.s,
                         units='erg/s', sampling_type='local')
 
@@ -70,7 +70,7 @@ def save_nuloss_profile(ds):
     df_sum.to_csv(f"nuloss_profiles/{ds.basename}_sum_profiles.csv")
 
 
-if __init__ == "__main__":
+if __name__ == "__main__":
     fname = argv[1]
     ds = yt.load(fname)
     save_nuloss_profile(ds)
