@@ -15,8 +15,8 @@ def _tot_nu_loss(field, data):
 
 
 def add_nuloss_fields(ds_nu, nu_field_list):
-    spec_fields = ['specific_nu_loss']
-    raw_fields = ['tot_nu_loss']
+    spec_fields = [('gas', 'specific_nu_loss')]
+    raw_fields = [('gas', 'tot_nu_loss_rate')]
 
     # define our nu loss
     def _spec_nu_loss(field, data):
@@ -35,11 +35,14 @@ def add_nuloss_fields(ds_nu, nu_field_list):
     # add individual mass multi fields
     for fld in nu_field_list:
 
-        ds_nu.add_field(name=('gas', f"tot_{fld}"),
+        # define our curr nu loss
+
+        new_fld_name = ('gas', f"tot_{fld[1]}_rate")
+        ds_nu.add_field(name=new_fld_name,
                         function=lambda field, data: -1 * data[fld] * data[('gas', 'mass')] * unyt.erg/unyt.g/unyt.s,
                         units='erg/s', sampling_type='local')
 
-        raw_fields.append(f"tot_{fld}")
+        raw_fields.append(new_fld_name)
 
     return spec_fields, raw_fields
 
@@ -60,13 +63,16 @@ def save_nuloss_profile(ds):
     N_bins = 100
     fields = ds.field_list + spec_fields
     prof = yt.create_profile(ds.all_data(), 'radius', fields, logs={'radius':False}, n_bins=N_bins, extrema={'radius':(0, 1e8)})
-    prof_sum = yt.create_profile(ds.all_data(), 'radius', raw_fields, weight=None, logs={'radius':False}, n_bins=N_bins, extrema={'radius':(0, 1e8)})
+
+    # have to hack by adding nu_fields otherwise get weird errors about null funcs
+    prof_sum = yt.create_profile(ds.all_data(), 'radius', nu_field_list+raw_fields, weight_field=None, logs={'radius':False}, n_bins=N_bins, extrema={'radius':(0, 1e8)})
 
     # save profiles
     df = prof.to_dataframe()
     df.to_csv(f"nuloss_profiles/{ds.basename}_avg_profiles.csv")
 
-    df_sum = prof_sum.to_dataframe()
+    # don't include the excess fields
+    df_sum = prof_sum.to_dataframe(raw_fields)
     df_sum.to_csv(f"nuloss_profiles/{ds.basename}_sum_profiles.csv")
 
 
